@@ -13,11 +13,13 @@ using Jotunn.Managers;
 using Jotunn.Utils;
 using System.Collections.Generic;
 using UnityEngine;
+using ExtendedItemDataFramework;
 
 namespace JotunnBackpacks
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(Jotunn.Main.ModGuid)]
+    [BepInDependency("randyknapp.mods.extendeditemdataframework")]
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal class JotunnBackpacks : BaseUnityPlugin
     {

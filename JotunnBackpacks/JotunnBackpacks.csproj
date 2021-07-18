@@ -70,6 +70,7 @@
   <ItemGroup>
     <Compile Include="Properties\IgnoreAccessModifiers.cs" />
     <Compile Include="JotunnBackpacks.cs" />
+    <Compile Include="AedenthornUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

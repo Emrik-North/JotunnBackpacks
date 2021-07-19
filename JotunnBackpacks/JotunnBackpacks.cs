@@ -45,11 +45,6 @@ namespace JotunnBackpacks
         public const string PluginName = "JotunnBackpacks";
         public const string PluginVersion = "0.0.1";
 
-        // Asset and prefab loading
-        private AssetBundle EmbeddedResourceBundle;
-        private GameObject BackpackIronPrefab;
-        private GameObject BackpackSilverPrefab;
-
         // Configuration values from Aedenthorn's BackpackRedux. Setting some of these manually.
         public static ConfigEntry<string> hotKey;
         public static Vector2 backpackSize;
@@ -73,11 +68,16 @@ namespace JotunnBackpacks
         // The advantage to using List instead of Array is that I don't need to assign a size to the List while declaring it.
         // On the other hand, Arrays are faster _because_ all the memory locations used are reserved at the beginning.
 
+        // Emrik is new to C#. I took dealing with the assets out of the main file to make it tidier, and put it into its own class outside the file.
+        // I'm creating an instance of the class BackpackAssets, otherwise I can't use it.
+        // I'm making this instance readonly, because I never modify it after creating it, so I assuming readonly is more efficient.
+        readonly BackpackAssets assets = new BackpackAssets();
+
         private void Awake()
         {
-            LoadAssets();
-            AddTranslations();
-            AddMockedItems();
+            assets.LoadAssets();
+            assets.AddTranslations();
+            assets.AddMockedItems();
 
             hotKey = Config.Bind<string>("General", "HotKey", "i", "Hotkey to open backpack.");
 
@@ -87,10 +87,6 @@ namespace JotunnBackpacks
 
             backpackTypes.Add("CapeIronBackpack");
             backpackTypes.Add("CapeSilverBackpack");
-
-
-            // backpackList.Add(backpackType1);
-            // backpackList.Add(backpackType2);
 
             // This is where all the backpack files will be stored
             assetPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), typeof(JotunnBackpacks).Namespace);
@@ -111,91 +107,6 @@ namespace JotunnBackpacks
 
             harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
-        }
-
-        private void LoadAssets()
-        {
-            // Load asset bundle from embedded resources
-            Jotunn.Logger.LogInfo($"Embedded resources: {string.Join(",", typeof(JotunnBackpacks).Assembly.GetManifestResourceNames())}");
-            EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("eviesbackpacks", typeof(JotunnBackpacks).Assembly);
-            BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab");
-            BackpackSilverPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
-        }
-
-        private void AddTranslations()
-        {
-            LocalizationManager.Instance.AddLocalization(new LocalizationConfig("English")
-            {
-                Translations = {
-                    {"item_cape_silverbackpack", "Fine Backpack" },
-                    {"item_cape_silverbackpack_description", "A fine backpack with silver backsupport." },
-                    {"se_silverbackpackstrength_start", "Your carry capacity has been increased." },
-                    {"item_ironbackpackstrength", "Backpack equipped" },
-                    {"item_cape_ironbackpack", "Rugged Backpack" },
-                    {"item_cape_ironbackpack_description", "A rugged backpack with iron backsupport." },
-                    {"se_ironbackpackstrength_start", "Your carry capacity has been increased." },
-                    { "item_silverbackpackstrength", "Backpack equipped" }
-                }
-            });
-        }
-
-        // Implementation of assets using mocks, adding recipes manually without the config abstraction
-        private void AddMockedItems()
-        {
-            // Iron Backpack
-            if (!BackpackIronPrefab) Jotunn.Logger.LogWarning($"Failed to load asset from bundle: {EmbeddedResourceBundle}");
-            else
-            {
-                // Create and add a custom item
-                CustomItem CI = new CustomItem(BackpackIronPrefab, true);
-                ItemManager.Instance.AddItem(CI);
-
-                //Create and add a custom recipe
-                Recipe recipe = ScriptableObject.CreateInstance<Recipe>();
-                recipe.name = "Recipe_CapeIronBackpack";
-                recipe.m_item = BackpackIronPrefab.GetComponent<ItemDrop>();
-                recipe.m_craftingStation = Mock<CraftingStation>.Create("piece_workbench");
-                var ingredients = new List<Piece.Requirement>
-                {
-                    MockRequirement.Create("LeatherScraps", 8),
-                    MockRequirement.Create("DeerHide", 2),
-                    MockRequirement.Create("Iron", 4),
-                };
-                recipe.m_resources = ingredients.ToArray();
-                CustomRecipe CR = new CustomRecipe(recipe, true, true);
-                ItemManager.Instance.AddRecipe(CR);
-
-                //Enable BoneReorder
-                BoneReorder.ApplyOnEquipmentChanged();
-            }
-
-            // Silver Backpack
-            if (!BackpackSilverPrefab) Jotunn.Logger.LogWarning($"Failed to load asset from bundle: {EmbeddedResourceBundle}");
-            else
-            {
-                // Create and add a custom item
-                CustomItem CI = new CustomItem(BackpackSilverPrefab, true);
-                ItemManager.Instance.AddItem(CI);
-
-                //Create and add a custom recipe
-                Recipe recipe = ScriptableObject.CreateInstance<Recipe>();
-                recipe.name = "Recipe_CapeSilverBackpack";
-                recipe.m_item = BackpackSilverPrefab.GetComponent<ItemDrop>();
-                recipe.m_craftingStation = Mock<CraftingStation>.Create("piece_workbench");
-                var ingredients = new List<Piece.Requirement>
-                {
-                    MockRequirement.Create("LeatherScraps", 8),
-                    MockRequirement.Create("DeerHide", 2),
-                    MockRequirement.Create("Silver", 4),
-                };
-                recipe.m_resources = ingredients.ToArray();
-                CustomRecipe CR = new CustomRecipe(recipe, true, true);
-                ItemManager.Instance.AddRecipe(CR);
-
-                //Enable BoneReorder
-                BoneReorder.ApplyOnEquipmentChanged();
-            }
-            EmbeddedResourceBundle.Unload(false);
         }
 
         // Integrating Aedenthorn's Backpack Redux: START

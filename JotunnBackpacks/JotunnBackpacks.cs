@@ -31,7 +31,8 @@ using System.Reflection;
 
 
 // TODO:
-// Remove excessive Jotunn.Logger things once you've figured out that stuff works.
+// * Remove excessive Jotunn.Logger things once you've figured out that stuff works.
+// * Consider storing backpack inventories in m_craftername rather than as files in modfolder. Would that be more efficient?
 
 namespace JotunnBackpacks
 {
@@ -54,8 +55,8 @@ namespace JotunnBackpacks
         private static string assetPath;
         private static bool opening = false;
         private static string backpackFileName;
-        private static Container backpackContainer;
-        private static Inventory backpackInventory;
+        private static Container backpackContainer; // Only need a single Container, I think, because only the contents (Inventory) vary between backpacks, not sizes.
+        private static Inventory backpackInventory; // = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
 
         private static JotunnBackpacks context; // What does context = this; mean?
         private Harmony harmony;
@@ -63,13 +64,14 @@ namespace JotunnBackpacks
         // Emrik's adventures
         public static List<string> backpackList = new List<string>(); // This is to store all unique IDs for each backpack
         public static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only CapeIronBackpack and CapeSilverBackpack)
+        public static Dictionary<string, Inventory> backpackDict = new Dictionary<string, Inventory>(); // This needs to be loaded up at start and saved on quit.
         public static string backpackEquipped; // Backpack currently equipped
 
         // The advantage to using List instead of Array is that I don't need to assign a size to the List while declaring it.
         // On the other hand, Arrays are faster _because_ all the memory locations used are reserved at the beginning.
 
         // Emrik is new to C#. I took dealing with the assets out of the main file to make it tidier, and put it into its own class outside the file.
-        // I'm creating an instance of the class BackpackAssets, otherwise I can't use it.
+        // I'm creating an instance of the class BackpackAssets, otherwise I can't use the stuff in there.
         // I'm making this instance readonly, because I never modify it after creating it, so I assuming readonly is more efficient.
         readonly BackpackAssets assets = new BackpackAssets();
 
@@ -85,6 +87,7 @@ namespace JotunnBackpacks
             backpackSize = new Vector2(6, 3);
             backpackWeightMult = 0.8f; // Items stored in backpacks are 20% lighter.
 
+            // TODO: This probably doesn't need to be inside Awake(), test moving it
             backpackTypes.Add("CapeIronBackpack");
             backpackTypes.Add("CapeSilverBackpack");
 
@@ -96,20 +99,79 @@ namespace JotunnBackpacks
                 Directory.CreateDirectory(assetPath);
             }
 
-            // Creates an enumerated list of all files in the assetPath starting with "backpack_"
-            var backpackFiles = Directory.EnumerateFiles(assetPath, "backpack_*");
-            foreach (string fileName in backpackFiles) // I'm assuming the foreach loop does nothing if the array has zero elements, so it doesn't add null to my bakpackList...
-            {
-                // Adds all the file names of backpacks in the directory to the backpackList
-                backpackList.Add(fileName);
-                Jotunn.Logger.LogMessage($"Found backpack: {fileName}\n");
-            }
+            // Get all the backpack infos stored in the JotunnBackpacks folder, if there are any there.
+            // TODO: NOTE that this will even load the backpack infos that you generated in other worlds/servers, but you won't be able to access them because you can't access their unique IDs.
+            // It's inefficient, though, since you'll not be using those infos in the world you're playing in. Will this be a problem?
+            LoadBackpackDictFromFile();
 
             harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
         }
 
-        // Integrating Aedenthorn's Backpack Redux: START
+        private static void LoadBackpackDictFromFile()
+        {
+            // Loads all backpack filenames and inventories from where they were stored in assetPath and saves them in backpackDict
+
+            // Creates an enumerated list of all files in the assetPath
+            var backpackFiles = Directory.EnumerateFiles(assetPath, "");
+
+            // backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y); // Need to initialize this like so, no?
+
+            // The assetPath contains the names of backpacks, and their corresponding contents stored in the form of ZPackages
+            foreach (string fileName in backpackFiles)
+            {
+                try
+                {
+                    // The contents of backpack files are stored in ZPackage format, but when you ReadAllText, it is a string type.
+                    string contents = File.ReadAllText(Path.Combine(assetPath, fileName));
+
+                    // Create an instance of a ZPackage and store the contents in there.
+                    ZPackage pkg = new ZPackage(contents);
+
+                    // Create a new instance of an Inventory class
+                    // If we stored the inventory without creating a new instance for each backpack, each backpack would just refer to the same inventory
+                    backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
+
+                    // Load the ZPackage into the newly created inventory
+                    backpackInventory.Load(pkg);
+
+                    // Add all the file names and contents into the backpackDict
+                    backpackDict.Add(fileName, backpackInventory);
+                    Jotunn.Logger.LogMessage($"Found backpack: {fileName}\n");
+                }
+                catch (Exception ex)
+                {
+                    Jotunn.Logger.LogWarning($"Backpack file corrupt!\n{ex}");
+                }
+
+                // Q: Should I initialize the backpacks with null contents in this dictionary, and only load their inventories when the backpack is opened, or when checking for character weight?
+                // Would that save on load time and/or RAM in case of a large number of backpacks? What would be more efficient?
+                // Should I clear backpackInventory at the end of this function, so that nothing can get to the last loaded inventory by accident?
+            }
+        }
+        private static string GetEquippedBackpack() // TODO: For now this gets a backpack TYPE. Make it into a unique backpack ID.
+        {
+            // Get a list of all equipped items.
+            List<ItemDrop.ItemData> equippedItems = Player.m_localPlayer.GetInventory().GetEquipedtems();
+
+            // Go through all the equipped items, match them for any of the names in backpackTypes.
+            // If a match is found, return the name.
+            string name;
+            for (int i = 0; i <= equippedItems.Count; i++)
+            {
+                name = equippedItems[i].m_dropPrefab?.name; // TODO: Maybe I can use .m_crafterName, and store the unique IDs into crafternames?
+                if (backpackTypes.Contains(name))
+                {
+                    Jotunn.Logger.LogMessage($"Equipped backpack found: {name}");
+                    return name;
+                }
+            }
+
+            // Return null if no backpacks are found.
+            return null;
+        }
+
+        // Integrating Aedenthorn's Backpack Redux
         private void Update()
         {
             if (!Player.m_localPlayer || !ZNetScene.instance)
@@ -118,61 +180,58 @@ namespace JotunnBackpacks
             if (!AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey.Value) && CanOpenBackpack())
             {
                 opening = true;
-                OpenBackpack(backpackEquipped);
+                OpenBackpack();
             }
         }
 
-        private static bool CanOpenBackpack() // TODO: For now this sets backpackEquipped to a backpack TYPE. Make it into a unique backpack ID.
+        private static bool CanOpenBackpack() // Every time this function is executed, it sets backpackEquipped to either null, or the name of the then-equipped backpack. 
         {
-            // Get a list of all equipped items.
-            List<ItemDrop.ItemData> equippedItems = Player.m_localPlayer.GetInventory().GetEquipedtems();
+            backpackEquipped = GetEquippedBackpack();
 
-            // Go through all the equipped items, match them for any of the names in backpackTypes.
-            // If a match is found, set backpackEquipped to that name and return true.
-            string name;
-            for (int i = 0; i <= equippedItems.Count; i++)
+            // Return true if GetEquippedBackpack() does not return null.
+            if (backpackEquipped != null)
             {
-                name = equippedItems[i].m_dropPrefab?.name;
-                if (backpackTypes.Contains(name)) {
-                    Jotunn.Logger.LogMessage($"Equipped backpack found: {name}");
-                    backpackEquipped = name;
-                    return true;
-                }
+                return true;
             }
 
-            // Return false if no match is found between backpackTypes and equippedItems.
+            // Return false GetEquippedBackpack() returns null.
             return false;
         }
 
-        private static void OpenBackpack(string backpackID) // TODO: For now, this opens a backpack TYPE. Make it open a unique backpack ID.
+        private static void OpenBackpack() // TODO: For now, this opens a backpack TYPE. Make it open a unique backpack ID.
         {
             // TODO: When you try to open a backpack, it should query for if this backpack has a unique ID (or backpackfile) associated with it. And if that ID is null, it should create a unique ID for it.
 
             backpackContainer = Player.m_localPlayer.gameObject.GetComponent<Container>();
             if (backpackContainer == null)
                 backpackContainer = Player.m_localPlayer.gameObject.AddComponent<Container>();
-            backpackContainer.m_name = backpackID;
-            AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackInventory;
+            backpackContainer.m_name = backpackEquipped;
+            AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackDict[backpackEquipped]; // TODO: Is this right?
             InventoryGui.instance.Show(backpackContainer);
         }
 
-        private static void LoadBackpackInventory() // TODO: LoadBackpackInventory(someBackpackID)
+        private static void LoadBackpackInventory(string backpackName)
         {
-            // TODO: specify which inventory to open
-            backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y); // "Backpack" is the string displayed above the backpack inventory when opened.
-            if (File.Exists(Path.Combine(assetPath, backpackFileName)))
+            // If backpackDict already contains backpackName, open the inventory from the dictionary
+            if (backpackDict.ContainsKey(backpackName))
             {
                 try
                 {
-                    string input = File.ReadAllText(Path.Combine(assetPath, backpackFileName));
-                    ZPackage pkg = new ZPackage(input);
-
-                    backpackInventory.Load(pkg);
+                    backpackInventory = backpackDict[backpackName];
                 }
                 catch (Exception ex)
                 {
                     Jotunn.Logger.LogWarning($"Backpack file corrupt!\n{ex}");
                 }
+            }
+
+            else
+            {
+                // If backpackDict does not have an existing inventory corresponding to the name, create a new one
+                backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y); // "Backpack" is the string displayed above the backpack inventory when opened.
+
+                // And add it to the backpackDict
+                backpackDict.Add(backpackName, backpackInventory); // TODO: Is this right?
             }
         }
 
@@ -190,12 +249,16 @@ namespace JotunnBackpacks
 
             static void Prefix(FejdStartup __instance, List<PlayerProfile> ___m_profiles)
             {
-                var profile = ___m_profiles.Find(p => p.GetFilename() == (string)typeof(Game).GetField("m_profileFilename", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null));
-                backpackFileName = "backpack_" + Path.GetFileNameWithoutExtension(profile.GetFilename()) + "_" + backpackEquipped; // TODO: This won't work because backpackEquipped can be null on exeucuting this line.
-                LoadBackpackInventory(); // TODO: LoadBackpackInventory(someBackpackID)
+                // var profile = ___m_profiles.Find(p => p.GetFilename() == (string)typeof(Game).GetField("m_profileFilename", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null));
+                // backpackFileName = "backpack_" + Path.GetFileNameWithoutExtension(profile.GetFilename()) + "_" + backpackName;
+
+                // LoadBackpackInventory();
+                // LoadBackpackDictFromFile();
+                // TODO: Why would we need to do anything here?! Didn't we already load the backpacks during Awake()?!
             }
         }
 
+        // TODO: Figure out precisely what's going on here
         [HarmonyPatch(typeof(InventoryGui), "Update")]
         static class InventoryGui_Update_Patch
         {
@@ -217,7 +280,7 @@ namespace JotunnBackpacks
                 }
                 else if (CanOpenBackpack())
                 {
-                    OpenBackpack(backpackEquipped);
+                    OpenBackpack();
                 }
             }
         }
@@ -227,25 +290,35 @@ namespace JotunnBackpacks
         {
             static void Prefix()
             {
-                if (backpackInventory != null)
+                if (backpackDict != null)
                 {
-                    ZPackage zpackage = new ZPackage();
-                    backpackInventory.Save(zpackage);
-                    string output = zpackage.GetBase64();
+                    string output;
 
-                    File.WriteAllText(Path.Combine(assetPath, backpackFileName), output);
+                    // This goes through all the pairs in backpackDict, and stores them into assetPath (inventories gets converted to ZPackages first, though)
+                    foreach (KeyValuePair<string, Inventory> backpack in backpackDict)
+                    {
+                        ZPackage zpackage = new ZPackage();
+                        backpack.Value.Save(zpackage);
+                        output = zpackage.GetBase64();
 
+                        // Write it to file
+                        File.WriteAllText(Path.Combine(assetPath, backpack.Key), output);
+                    }
                 }
-
             }
         }
 
+        // TODO: I haven't touched this yet at all. Do that.
         [HarmonyPatch(typeof(Inventory), "GetTotalWeight")]
         [HarmonyPriority(Priority.Last)]
         static class GetTotalWeight_Patch
         {
             static void Postfix(Inventory __instance, ref float __result)
             {
+
+                // Temporarily disabling this whole thingy while I test other things!
+                return;
+
                 if (!backpackContainer || !Player.m_localPlayer)
                     return;
                 if (__instance == Player.m_localPlayer.GetInventory())
@@ -263,7 +336,8 @@ namespace JotunnBackpacks
             }
         }
 
-        [HarmonyPatch(typeof(Console), "InputText")]
+        // TODO: I guess this allows the user to reset their backpacks in-game in case something goes wrong. I could probably remove it?
+        [HarmonyPatch(typeof(Console), "InputText")] // TODO: What does this patch do? Can I remove it?
         static class InputText_Patch
         {
             static bool Prefix(Console __instance)
@@ -275,7 +349,8 @@ namespace JotunnBackpacks
                     context.Config.Save();
 
                     if (Player.m_localPlayer)
-                        LoadBackpackInventory(); // TODO: LoadBackpackInventory(someBackpackID)
+                        LoadBackpackDictFromFile();
+                        // LoadBackpackInventory();
 
                     Traverse.Create(__instance).Method("AddString", new object[] { text }).GetValue();
                     Traverse.Create(__instance).Method("AddString", new object[] { $"{context.Info.Metadata.Name} config reloaded" }).GetValue();
@@ -293,6 +368,15 @@ namespace JotunnBackpacks
 
             public static bool Prefix()
             {
+                // TODO
+                // foreach (item in inventory)
+                // {
+                //    if (is a backpack)
+                //    {
+                //       go through its inventory and check for non-teleportable stuff, return false as soon as first offender is found
+                //    }
+                // }
+
                 foreach (ItemDrop.ItemData item in backpackInventory.m_inventory)
                 {
                     if (!item.m_shared.m_teleportable)

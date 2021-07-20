@@ -115,8 +115,6 @@ namespace JotunnBackpacks
             // Creates an enumerated list of all files in the assetPath
             var backpackFiles = Directory.EnumerateFiles(assetPath, "");
 
-            // backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y); // Need to initialize this like so, no?
-
             // The assetPath contains the names of backpacks, and their corresponding contents stored in the form of ZPackages
             foreach (string fileName in backpackFiles)
             {
@@ -144,7 +142,7 @@ namespace JotunnBackpacks
                     Jotunn.Logger.LogWarning($"Backpack file corrupt!\n{ex}");
                 }
 
-                // Q: Should I initialize the backpacks with null contents in this dictionary, and only load their inventories when the backpack is opened, or when checking for character weight?
+                // TODO Q: Should I initialize the backpacks with null contents in this dictionary, and only load their inventories when the backpack is opened, or when checking for character weight?
                 // Would that save on load time and/or RAM in case of a large number of backpacks? What would be more efficient?
                 // Should I clear backpackInventory at the end of this function, so that nothing can get to the last loaded inventory by accident?
             }
@@ -171,7 +169,8 @@ namespace JotunnBackpacks
             return null;
         }
 
-        // Integrating Aedenthorn's Backpack Redux
+        // TODO: This method is from Aedenthorn's BackpackRedux, and I'm not entirely sure what it does yet. WTF is a ZNetScene?
+        // Also, I can't see this method being called anywhere?
         private void Update()
         {
             if (!Player.m_localPlayer || !ZNetScene.instance)
@@ -205,8 +204,14 @@ namespace JotunnBackpacks
             backpackContainer = Player.m_localPlayer.gameObject.GetComponent<Container>();
             if (backpackContainer == null)
                 backpackContainer = Player.m_localPlayer.gameObject.AddComponent<Container>();
+
+            // CanOpenBackpack() is always executed before this code, so backpackEquipped has a value, otherwise OpenBackback wouldn't get executed in the first place
             backpackContainer.m_name = backpackEquipped;
-            AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackDict[backpackEquipped]; // TODO: Is this right?
+
+            // Checks to see if backpackEquipped already has an entry in the backpackDict, and loads it into backpackInventory if so, otherwise it creates a new Inventory instance for this backpack and stores that to backpackInventory
+            LoadBackpackInventory(backpackEquipped);
+
+            AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackInventory;
             InventoryGui.instance.Show(backpackContainer);
         }
 
@@ -231,7 +236,8 @@ namespace JotunnBackpacks
                 backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y); // "Backpack" is the string displayed above the backpack inventory when opened.
 
                 // And add it to the backpackDict
-                backpackDict.Add(backpackName, backpackInventory); // TODO: Is this right?
+                backpackDict.Add(backpackName, backpackInventory);
+                Jotunn.Logger.LogMessage($"Opening new backpack, adding reference to backpackDict for: {backpackName}");
             }
         }
 
@@ -292,23 +298,25 @@ namespace JotunnBackpacks
             {
                 if (backpackDict != null)
                 {
+                    // Declare the output variable before the loop, so it doesn't have to be declared (and a memory location found for it) during each iteration
+                    // Hopefwly this is more efficient, but maybe that's all taken care of by the compiler anyhow, who knows.
                     string output;
 
                     // This goes through all the pairs in backpackDict, and stores them into assetPath (inventories gets converted to ZPackages first, though)
-                    foreach (KeyValuePair<string, Inventory> backpack in backpackDict)
+                    foreach (KeyValuePair<string, Inventory> backpackEntry in backpackDict)
                     {
                         ZPackage zpackage = new ZPackage();
-                        backpack.Value.Save(zpackage);
+                        backpackEntry.Value.Save(zpackage); // Saves the backpackEntry's Inventory to the zpackage.
                         output = zpackage.GetBase64();
 
                         // Write it to file
-                        File.WriteAllText(Path.Combine(assetPath, backpack.Key), output);
+                        File.WriteAllText(Path.Combine(assetPath, backpackEntry.Key), output);
                     }
                 }
             }
         }
 
-        // TODO: I haven't touched this yet at all. Do that.
+        // TODO: I haven't touched this yet at all. I should do that.
         [HarmonyPatch(typeof(Inventory), "GetTotalWeight")]
         [HarmonyPriority(Priority.Last)]
         static class GetTotalWeight_Patch
@@ -368,7 +376,9 @@ namespace JotunnBackpacks
 
             public static bool Prefix()
             {
-                // TODO
+                return true; // Disable this patch for now, while I work on other stuff
+
+                // TODO:
                 // foreach (item in inventory)
                 // {
                 //    if (is a backpack)

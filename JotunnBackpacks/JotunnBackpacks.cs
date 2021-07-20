@@ -124,7 +124,7 @@ namespace JotunnBackpacks
 
                 // Create a new instance of an Inventory class
                 // If we stored the inventory without creating a new instance for each backpack, each backpack would just refer to the same inventory
-                backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
+                Inventory backpackInventory = new Inventory("Backpack", null, (int)6, (int)3);
 
                 try
                 {
@@ -135,7 +135,7 @@ namespace JotunnBackpacks
                     ZPackage pkg = new ZPackage(contents);      
 
                     // Load the ZPackage into the newly created inventory
-                    backpackInventory.Load(pkg); // NullReferenceException from hell!
+                    backpackInventory.Load(pkg); // TODO: NullReferenceException from hell!
                 }
                 catch (Exception ex)
                 {

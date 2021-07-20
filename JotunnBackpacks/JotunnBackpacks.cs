@@ -20,7 +20,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Emrik's import
-using ExtendedItemDataFramework; // Maybe we can make it work without this dependency
+// using ExtendedItemDataFramework; // Maybe we can make it work without this dependency
 
 // From Aedenthorn's Backpack Redux
 using HarmonyLib;
@@ -54,7 +54,6 @@ namespace JotunnBackpacks
         // From Aedenthorn's Backpack Redux
         private static string assetPath;
         private static bool opening = false;
-        private static string backpackFileName;
         private static Container backpackContainer; // Only need a single Container, I think, because only the contents (Inventory) vary between backpacks, not sizes.
         private static Inventory backpackInventory; // = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
 
@@ -113,34 +112,39 @@ namespace JotunnBackpacks
             // Loads all backpack filenames and inventories from where they were stored in assetPath and saves them in backpackDict
 
             // Creates an enumerated list of all files in the assetPath
-            var backpackFiles = Directory.EnumerateFiles(assetPath, "");
+            // List<string> backpackFiles = new List<string> (Directory.EnumerateFiles(assetPath, ""));
+            var backpackFiles = Directory.EnumerateFiles(assetPath); // This gets a list of filenames INCLUDING their full path, e.g. "D:\Games\SteamLibrary\steamapps\common\Valheim\BepInEx\plugins\JotunnBackpacks\JotunnBackpacks\MyBackpackID"
+            string fileName;
 
             // The assetPath contains the names of backpacks, and their corresponding contents stored in the form of ZPackages
-            foreach (string fileName in backpackFiles)
+            foreach (string fileFullPath in backpackFiles)
             {
+                fileName = Path.GetFileName(fileFullPath);
+                Jotunn.Logger.LogMessage($"Found file: {fileName}\n");
+
+                // Create a new instance of an Inventory class
+                // If we stored the inventory without creating a new instance for each backpack, each backpack would just refer to the same inventory
+                backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
+
                 try
                 {
-                    // The contents of backpack files are stored in ZPackage format, but when you ReadAllText, it is a string type.
-                    string contents = File.ReadAllText(Path.Combine(assetPath, fileName));
+                    // The contents of backpack files are stored in ZPackage format.
+                    string contents = File.ReadAllText(fileFullPath);
 
                     // Create an instance of a ZPackage and store the contents in there.
-                    ZPackage pkg = new ZPackage(contents);
-
-                    // Create a new instance of an Inventory class
-                    // If we stored the inventory without creating a new instance for each backpack, each backpack would just refer to the same inventory
-                    backpackInventory = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
+                    ZPackage pkg = new ZPackage(contents);      
 
                     // Load the ZPackage into the newly created inventory
-                    backpackInventory.Load(pkg);
-
-                    // Add all the file names and contents into the backpackDict
-                    backpackDict.Add(fileName, backpackInventory);
-                    Jotunn.Logger.LogMessage($"Found backpack: {fileName}\n");
+                    backpackInventory.Load(pkg); // NullReferenceException from hell!
                 }
                 catch (Exception ex)
                 {
                     Jotunn.Logger.LogWarning($"Backpack file corrupt!\n{ex}");
                 }
+
+                // Add all the file names and contents into the backpackDict
+                backpackDict.Add(fileName, backpackInventory);
+                Jotunn.Logger.LogMessage($"Added to backpackDict: {fileName}\n");
 
                 // TODO Q: Should I initialize the backpacks with null contents in this dictionary, and only load their inventories when the backpack is opened, or when checking for character weight?
                 // Would that save on load time and/or RAM in case of a large number of backpacks? What would be more efficient?
@@ -194,6 +198,7 @@ namespace JotunnBackpacks
             }
 
             // Return false GetEquippedBackpack() returns null.
+            Jotunn.Logger.LogMessage("No backpack equipped. Can't open any.");
             return false;
         }
 
@@ -258,9 +263,13 @@ namespace JotunnBackpacks
                 // var profile = ___m_profiles.Find(p => p.GetFilename() == (string)typeof(Game).GetField("m_profileFilename", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null));
                 // backpackFileName = "backpack_" + Path.GetFileNameWithoutExtension(profile.GetFilename()) + "_" + backpackName;
 
-                // LoadBackpackInventory();
+                // Get all the backpack infos stored in the JotunnBackpacks folder, if there are any there.
+                // TODO: NOTE that this will even load the backpack infos that you generated in other worlds/servers, but you won't be able to access them because you can't access their unique IDs.
+                // It's inefficient, though, since you'll not be using those infos in the world you're playing in. Will this be a problem?
+                // Jotunn.Logger.LogMessage("WE ARE NOW IN LoadMainScene");
                 // LoadBackpackDictFromFile();
-                // TODO: Why would we need to do anything here?! Didn't we already load the backpacks during Awake()?!
+
+                // Q TODO: Do we load them at Awake() or during LoadMainScene?
             }
         }
 
@@ -302,15 +311,19 @@ namespace JotunnBackpacks
                     // Hopefwly this is more efficient, but maybe that's all taken care of by the compiler anyhow, who knows.
                     string output;
 
-                    // This goes through all the pairs in backpackDict, and stores them into assetPath (inventories gets converted to ZPackages first, though)
+                    // This goes through all the pairs in backpackDict, and stores them into assetPath (get the contents of inventories as ZPackages first)
                     foreach (KeyValuePair<string, Inventory> backpackEntry in backpackDict)
                     {
                         ZPackage zpackage = new ZPackage();
                         backpackEntry.Value.Save(zpackage); // Saves the backpackEntry's Inventory to the zpackage.
                         output = zpackage.GetBase64();
 
+                        Jotunn.Logger.LogMessage($"Trying to save the following backpack inventory: {backpackEntry.Value}\n");
+                        Jotunn.Logger.LogMessage($"Trying to save the following zpackage: {output}\n");
+
                         // Write it to file
                         File.WriteAllText(Path.Combine(assetPath, backpackEntry.Key), output);
+                        Jotunn.Logger.LogMessage($"Saved to file: {backpackEntry.Key}\n");
                     }
                 }
             }

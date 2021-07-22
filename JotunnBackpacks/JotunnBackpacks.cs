@@ -1,38 +1,14 @@
-﻿// JotunnBackpacks
-// A Valheim mod using Jötunn
-// Used to demonstrate the libraries capabilities
-// 
-// File:    JotunnBackpacks.cs
-// Project: JotunnBackpacks
-
-// TODO: 
-// Check backpack for unteleportable items before going through portal.
-// Use ExtendedItemDataFramework to attach a separate inventory to each backpack.
-
-// From Jotunn
-using BepInEx;
+﻿using BepInEx;
 using BepInEx.Configuration;
-using Jotunn.Configs;
-using Jotunn.Entities;
-using Jotunn.Managers;
 using Jotunn.Utils;
 using System.Collections.Generic;
 using UnityEngine;
-
-// Emrik's import
-using ExtendedItemDataFramework; // Maybe we can make it work without this dependency
-
-// From Aedenthorn's Backpack Redux
 using HarmonyLib;
-using System;
-using System.Diagnostics;
-using System.IO;
-using System.Reflection;
+using ExtendedItemDataFramework;
 
 
 // TODO:
-// * Remove excessive Jotunn.Logger things once you've figured out that stuff works.
-// * Consider storing backpack inventories in m_craftername rather than as files in modfolder. Would that be more efficient?
+// * Remove excessive Jotunn.Logger things once you've figured out how stuff works.
 
 namespace JotunnBackpacks
 {
@@ -54,18 +30,12 @@ namespace JotunnBackpacks
         // From Aedenthorn's Backpack Redux
         private static bool opening = false;
         private static Container backpackContainer; // Only need a single Container, I think, because only the contents (Inventory) vary between backpacks, not sizes.
-        // private static Inventory backpackInventory; // = new Inventory("Backpack", null, (int)backpackSize.x, (int)backpackSize.y);
 
         private Harmony harmony;
 
         // Emrik's adventures
-        public static List<string> backpackList = new List<string>(); // This is to store all unique IDs for each backpack
         public static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only CapeIronBackpack and CapeSilverBackpack)
-        public static Dictionary<string, Inventory> backpackDict = new Dictionary<string, Inventory>(); // This needs to be loaded up at start and saved on quit.
         public static ItemDrop.ItemData backpackEquipped; // Backpack object currently equipped
-
-        // The advantage to using List instead of Array is that I don't need to assign a size to the List while declaring it.
-        // On the other hand, Arrays are faster _because_ all the memory locations used are reserved at the beginning.
 
         // Emrik is new to C#. I took dealing with the assets out of the main file to make it tidier, and put it into its own class outside the file.
         // I'm creating an instance of the class BackpackAssets, otherwise I can't use the stuff in there.
@@ -88,13 +58,12 @@ namespace JotunnBackpacks
             backpackTypes.Add("CapeIronBackpack");
             backpackTypes.Add("CapeSilverBackpack");
 
-            // The "NewExtendedItemData" event is run whenever a newly created item is "extended" by the ExtendedItemDataFramework.dll, I'm just catching it and appending my own code at the end of it
+            // The "NewExtendedItemData" event is run whenever a newly created item is extended by the ExtendedItemDataFramework.dll, I'm just catching it and appending my own code at the end of it
             ExtendedItemData.NewExtendedItemData += OnNewExtendedItemData;
 
             harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
         }
-
 
         //  This is the code appended to the NewExtendedItemData event that we're catching, and the argument passed in automatically is the newly generated extended item data.
         public static void OnNewExtendedItemData(ExtendedItemData itemData)
@@ -111,11 +80,6 @@ namespace JotunnBackpacks
 
                 // Assign the Inventory instance to the backpack item's BackpackComponent
                 itemData.GetComponent<BackpackComponent>().SetBackpackInventory(inventoryInstance);
-
-
-                // Assign that Inventory instance to the BackpackComponent of the current item object
-                // itemData.ReplaceComponent<BackpackComponent>().BackpackInventory = inventoryInstance;
-                //itemData.ReplaceComponent<BackpackComponent>().SetBackpackInventory(inventoryInstance);
 
                 // TODO: Can I just store an Inventory object to the backpack ItemData object, or do I need to Serialize it into a string, like with ZPackages?
 
@@ -145,8 +109,7 @@ namespace JotunnBackpacks
             return null;
         }
 
-        // Emrik: This method is from Aedenthorn's BackpackRedux, and I'm not entirely sure what it does yet.
-        // Emrik: I can't see this method being called anywhere, but I tested and it's essential for mod functionality. Where is it being called?
+        // This method is from Aedenthorn's BackpackRedux. I can't see this method being called anywhere, but I tested and it's essential for mod functionality. Where is it being called?
         private void Update()
         {
             if (!Player.m_localPlayer || !ZNetScene.instance)
@@ -158,21 +121,19 @@ namespace JotunnBackpacks
                 OpenBackpack();
             }
 
-            // TODO: Emrik testing things
+            // TODO: DEBUGGING: Testing whether I can Serialize() and Deserialize() the backpack's inventory while in-game. Update: Seems to work!
             if (!AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown("y"))
             {
-                ItemDrop.ItemData bogoBAM = GetEquippedBackpack();
-                string dataStuff = bogoBAM.Extended().GetComponent<BackpackComponent>().Serialize();
+                ItemDrop.ItemData ninjaDebuggerVariable = GetEquippedBackpack();
+                string dataStuff = ninjaDebuggerVariable.Extended().GetComponent<BackpackComponent>().Serialize();
 
-                Jotunn.Logger.LogMessage("MANUALLY CALLING Deserialize() ON THE BACKPACK. IS THERE ERROR?");
-                bogoBAM.Extended().GetComponent<BackpackComponent>().Deserialize(dataStuff);
-
-
-
+                Jotunn.Logger.LogMessage("MANUALLY CALLING Deserialize() ON THE BACKPACK NOW. IS THERE ERROR?");
+                ninjaDebuggerVariable.Extended().GetComponent<BackpackComponent>().Deserialize(dataStuff);
             }
         }
 
-        private static bool CanOpenBackpack() // Every time this function is executed, it sets backpackEquipped to either null, or the name of the then-equipped backpack. 
+        // Every time this function is executed, it sets backpackEquipped to either null, or the name of the then-equipped backpack. 
+        private static bool CanOpenBackpack()
         {
             backpackEquipped = GetEquippedBackpack();
 
@@ -189,52 +150,12 @@ namespace JotunnBackpacks
 
         private static void OpenBackpack()
         {
-            // TODO: When you try to open a backpack, it should query for if this backpack has a unique ID (or backpackfile) associated with it. And if that ID is null, it should create a unique ID for it.
-
             backpackContainer = Player.m_localPlayer.gameObject.GetComponent<Container>();
             if (backpackContainer == null)
                 backpackContainer = Player.m_localPlayer.gameObject.AddComponent<Container>();
 
-            // CanOpenBackpack() is always executed before this code, so backpackEquipped has a value, otherwise OpenBackback wouldn't get executed in the first place
-            // backpackContainer.m_name = backpackEquipped; // We don't need to name this, probably
-
-            // Checks to see if backpackEquipped already has an entry in the backpackDict, and loads it into backpackInventory if so, otherwise it creates a new Inventory instance for this backpack and stores that to backpackInventory
-            // LoadBackpackInventory();
-
-            // TODO: Remove this testing stuff
-            Jotunn.Logger.LogMessage($"Is the equippedBackpack itemdata extended?: {backpackEquipped.IsExtended()}");
-            Jotunn.Logger.LogMessage($"List of components in equippedBackpack: {backpackEquipped.Extended().Components.ToString()}");
-
-
             AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackEquipped.Extended().GetComponent<BackpackComponent>().backpackInventory; // GetBackpackInventory(backpackEquipped);
             InventoryGui.instance.Show(backpackContainer);
-        }
-
-        [HarmonyPatch(typeof(FejdStartup), "LoadMainScene")]
-        static class LoadMainScene_Patch
-        {
-            // TODO: Save backpackfiles with their unique IDs. Remove player name from backpackfilenames, because we want other players to be able to pick up the backpack and see its contents too.
-            // TODO: I think this section can be removed, and we move the loading of the backpack files to happen _when we equip the backpack_.
-
-            // if (Enumerate(Player.m_localPlayer.GetInventory().GetEquipedtems().m_dropPrefab?.name, "*backpack*").ToString() != null)
-            //     {
-            //        load the backpack
-            //     }
-
-
-            static void Prefix(FejdStartup __instance, List<PlayerProfile> ___m_profiles)
-            {
-                // var profile = ___m_profiles.Find(p => p.GetFilename() == (string)typeof(Game).GetField("m_profileFilename", BindingFlags.NonPublic | BindingFlags.Static).GetValue(null));
-                // backpackFileName = "backpack_" + Path.GetFileNameWithoutExtension(profile.GetFilename()) + "_" + backpackName;
-
-                // Get all the backpack infos stored in the JotunnBackpacks folder, if there are any there.
-                // TODO: NOTE that this will even load the backpack infos that you generated in other worlds/servers, but you won't be able to access them because you can't access their unique IDs.
-                // It's inefficient, though, since you'll not be using those infos in the world you're playing in. Will this be a problem?
-                // Jotunn.Logger.LogMessage("WE ARE NOW IN LoadMainScene");
-                // LoadBackpackDictFromFile();
-
-                // Q TODO: Do we load them at Awake() or during LoadMainScene?
-            }
         }
 
         // TODO: Figure out precisely what's going on here

@@ -1,17 +1,5 @@
-﻿// JotunnBackpacks
-// A Valheim mod using Jötunn
-// Used to demonstrate the libraries capabilities
-// 
-// File:    JotunnBackpacks.cs
-// Project: JotunnBackpacks
-
-// TODO: 
-// Check backpack for unteleportable items before going through portal.
-// Use ExtendedItemDataFramework to attach a separate inventory to each backpack.
-
-using System;
-using ExtendedItemDataFramework; // Maybe we can make it work without this dependency
-
+﻿using System;
+using ExtendedItemDataFramework;
 
 public class BackpackComponent : BaseExtendedItemComponent
 {
@@ -25,11 +13,9 @@ public class BackpackComponent : BaseExtendedItemComponent
     public void SetBackpackInventory(Inventory inventoryInstance)
     {
         backpackInventory = inventoryInstance;
-        Save(); // This writes the new item data to the ItemData object, which will be saved whenever game saves the ItemData object.
+        Save(); // This writes the new data to the ItemData object, which will be saved whenever game saves the ItemData object.
     }
 
-    // TODO: Do I need the "override" keywords here?
-    // When the game closes, it needs to save all the stuff in string format, so we need to convert the objects (like Inventory) to strings (like ZPackages) when the game closes, otherwise we can't load them up later.
     public override string Serialize()
     {
         Jotunn.Logger.LogMessage("SERIALIZING");
@@ -48,9 +34,7 @@ public class BackpackComponent : BaseExtendedItemComponent
         {
             ZPackage pkg = new ZPackage(data);
             Jotunn.Logger.LogMessage($"DESERIALIZING: \n data: {data}\n");
-            backpackInventory.Load(pkg); // NullReferenceError from hell TODO. Is the BackpackInventory even an instance here? How does this method reference the instance??? Should look into how EIDF was coded.
-
-            // TODO: Manually call the Serialize method for each backpack in a on_player_save (or something) patch. Also keep a list of all known backpack in a dictionary, so you know which backpacks to save (serialize) on game exit.
+            backpackInventory.Load(pkg); // NullReferenceError from hell TODO.
 
         }
         catch (Exception ex)

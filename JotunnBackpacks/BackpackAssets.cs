@@ -1,16 +1,4 @@
-﻿// JotunnBackpacks
-// A Valheim mod using Jötunn
-// Used to demonstrate the libraries capabilities
-// 
-// File:    JotunnBackpacks.cs
-// Project: JotunnBackpacks
-
-// TODO: 
-// Check backpack for unteleportable items before going through portal.
-// Use ExtendedItemDataFramework to attach a separate inventory to each backpack.
-
-// From Jotunn
-using Jotunn.Configs;
+﻿using Jotunn.Configs;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using Jotunn.Utils;

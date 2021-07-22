@@ -32,9 +32,13 @@ public class BackpackComponent : BaseExtendedItemComponent
     {
         try
         {
+            // TODO: Move this somewhere tidier. For now, this works while I'm testing.
+            Inventory inventoryInstance = new Inventory("Backpack", null, 6, 3);
+            // Save();
             ZPackage pkg = new ZPackage(data);
             Jotunn.Logger.LogMessage($"DESERIALIZING: \n data: {data}\n");
-            backpackInventory.Load(pkg); // NullReferenceError from hell TODO.
+            inventoryInstance.Load(pkg); // NullReferenceError from hell TODO.
+            backpackInventory = inventoryInstance;
 
         }
         catch (Exception ex)

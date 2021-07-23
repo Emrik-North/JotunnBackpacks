@@ -1,10 +1,12 @@
 # JötunnBackpacks
 
-Credit for the backpack models goes to [Cinnabunn/Evie](https://github.com/capnbubs).
-Thanks to RandyKnapp for the [Extended Item Data Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework).
-Thanks to the Jotunn team for the modding framework this mod is built from.
-Thanks to Aedenthorn for their [Backpack Redux]() mod, whose code I use to make this mod work.
+A work in project. Almost done.
 
-## TODO
-* Add unique IDs to backpacks using [Extended Item Data Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework) (RandyKnapp), to prevent you from being able to access the same inventory by crafting backpacks in different locations.
-* 
+### Credit goes to
+ * [Cinnabunn/Evie](https://github.com/capnbubs) for their 'eviesbackpacks' assets inside [JotunnModExample](https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded)
+ * Randy Knapp for their [Extended Item Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework), without which I wouldn't be able to do this project.
+ * Aedenthorn for their [BackpackRedux](https://github.com/aedenthorn/ValheimMods/blob/master/BackpackRedux/) mod, which I learned a great deal from.
+ * [sbtoonz](https://github.com/VMP-Valheim/Back_packs) for initial help with the IsTeleportable_Patch.
+ * The Jotunn Team for creating [Jotunn: The Valheim Library](https://valheim-modding.github.io/Jotunn/index.html), which makes modding life a lot more convenient.
+
+Most of this project is the result of the hard work of these people. All I've done is combine their efforts into this mod and smoothed out issues.

@@ -30,12 +30,13 @@ Push-Location -Path (Split-Path -Parent $MyInvocation.MyCommand.Path)
 # Plugin name without ".dll"
 $name = "$TargetAssembly" -Replace('.dll')
 
+# Emrik removing this because he doesn't know what it does.
 # Create the mdb file
-$pdb = "$TargetPath\$name.pdb"
-if (Test-Path -Path "$pdb") {
-    Write-Host "Create mdb file for plugin $name"
-    Invoke-Expression "& `"$(Get-Location)\libraries\Debug\pdb2mdb.exe`" `"$TargetPath\$TargetAssembly`""
-}
+# $pdb = "$TargetPath\$name.pdb"
+# if (Test-Path -Path "$pdb") {
+#     Write-Host "Create mdb file for plugin $name"
+#     Invoke-Expression "& `"$(Get-Location)\libraries\Debug\pdb2mdb.exe`" `"$TargetPath\$TargetAssembly`""
+# }
 
 # Main Script
 Write-Host "Publishing for $Target from $TargetPath"
@@ -47,7 +48,7 @@ if ($Target.Equals("Debug")) {
     Write-Host "Copy $TargetAssembly to $plug"
     Copy-Item -Path "$TargetPath\$name.dll" -Destination "$plug" -Force
     Copy-Item -Path "$TargetPath\$name.pdb" -Destination "$plug" -Force
-    Copy-Item -Path "$TargetPath\$name.dll.mdb" -Destination "$plug" -Force
+    # Copy-Item -Path "$TargetPath\$name.dll.mdb" -Destination "$plug" -Force
     
     $mono = "$ValheimPath\MonoBleedingEdge\EmbedRuntime";
     Write-Host "Copy mono-2.0-bdwgc.dll to $mono"

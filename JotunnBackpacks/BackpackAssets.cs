@@ -1,4 +1,11 @@
-﻿using Jotunn.Configs;
+﻿/* BackpackAssets.cs
+ * 
+ * From JotunnModExample, including eviesbackpacks made by CinnaBunn (Evie).
+ * https://github.com/Valheim-Modding/JotunnModExample/
+ * 
+ */
+
+using Jotunn.Configs;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using Jotunn.Utils;
@@ -15,7 +22,6 @@ public class BackpackAssets
     public void LoadAssets()
     {
         // Load asset bundle from embedded resources
-        // "typeof(JotunnBackpacks.JotunnBackpacks)" here is used because we need to get to the JotunnBackpacks class inside the JotunnBackpacks namespace in the other file.
         Jotunn.Logger.LogInfo($"Embedded resources: {string.Join(",", typeof(JotunnBackpacks.JotunnBackpacks).Assembly.GetManifestResourceNames())}");
         EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("eviesbackpacks", typeof(JotunnBackpacks.JotunnBackpacks).Assembly);
         BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab");
@@ -27,14 +33,14 @@ public class BackpackAssets
         LocalizationManager.Instance.AddLocalization(new LocalizationConfig("English")
         {
             Translations = {
-                {"item_cape_silverbackpack", "Fine Backpack" },
-                {"item_cape_silverbackpack_description", "A fine backpack with silver backsupport." },
-                {"se_silverbackpackstrength_start", "Your carry capacity has been increased." },
+                {"item_cape_silverbackpack", "Fine Backpack"},
+                {"item_cape_silverbackpack_description", "A Fine backpack, complete with buckles and fine leather straps. Increases carry capacity by 200."},
+                {"se_silverbackpackstrength_start", "Your carry capacity has been increased."},
                 {"item_ironbackpackstrength", "Backpack equipped" },
                 {"item_cape_ironbackpack", "Rugged Backpack" },
-                {"item_cape_ironbackpack_description", "A rugged backpack with iron backsupport." },
-                {"se_ironbackpackstrength_start", "Your carry capacity has been increased." },
-                { "item_silverbackpackstrength", "Backpack equipped" }
+                {"item_cape_ironbackpack_description", "A Rugged backpack, complete with buckles and fine leather straps. Increases carry capacity by 150."},
+                {"se_ironbackpackstrength_start", "Your carry capacity has been increased."},
+                { "item_silverbackpackstrength", "Backpack equipped"}
             }
         });
     }
@@ -59,7 +65,7 @@ public class BackpackAssets
             {
                 MockRequirement.Create("LeatherScraps", 8),
                 MockRequirement.Create("DeerHide", 2),
-                MockRequirement.Create("Iron", 4),
+                MockRequirement.Create("Iron", 10),
             };
             recipe.m_resources = ingredients.ToArray();
             CustomRecipe CR = new CustomRecipe(recipe, true, true);
@@ -86,7 +92,7 @@ public class BackpackAssets
             {
                 MockRequirement.Create("LeatherScraps", 8),
                 MockRequirement.Create("DeerHide", 2),
-                MockRequirement.Create("Silver", 4),
+                MockRequirement.Create("Silver", 10),
             };
             recipe.m_resources = ingredients.ToArray();
             CustomRecipe CR = new CustomRecipe(recipe, true, true);

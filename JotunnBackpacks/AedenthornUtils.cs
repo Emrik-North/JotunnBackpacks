@@ -1,4 +1,11 @@
-﻿using UnityEngine;
+﻿/* AedenthornUtils.cs
+ * 
+ * From Aedenthorn's amazing mod repository. I've not touched this code, but benefited greatly from it.
+ * https://github.com/aedenthorn/ValheimMods/blob/master/BackpackRedux/AedenthornUtils.cs
+ * 
+ */
+
+using UnityEngine;
 
 public class AedenthornUtils
 {

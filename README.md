@@ -33,7 +33,7 @@ Most of this project is the result of the hard work of these people. All I've do
 Please let me know if you find any additional bugs, issues or incompatibilities.
 
 ### Links
-Thunderstore:
-Nexusmods:
+Thunderstore: (link)
+Nexusmods: (link)
 GitHub: https://github.com/Emrik-North/JotunnBackpacks
 

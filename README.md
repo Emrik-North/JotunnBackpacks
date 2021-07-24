@@ -1,6 +1,6 @@
 # JötunnBackpacks
 
-A work in project. Almost done.
+A work in progress. Almost done.
 
 This mod introduces two backpacks (thanks to Evie) to the game. They increase your carry capacity and lets you open their inventories with a configurable hotkey (_i_ by default). Items stored in the backpacks have their weight reduced by 25%, but they also reduce your movement speed.
 

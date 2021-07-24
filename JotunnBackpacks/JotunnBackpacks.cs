@@ -28,11 +28,6 @@ using ExtendedItemDataFramework;
 
 /* TODO:
  * Enforce everyone on server must have mod.
- * Figure out what Aedenthorn means by "if(new StackFrame(2).ToString().IndexOf("OverrideGetTotalWeight") > -1)", and ponder if I want to do something like that as well.
- * 
- * TODO BUG! *Sometimes* if I put a backpack inside the silver backpack, the silver backpack saves its inventory, and then I take the backpack out and put it inside player inventory, and the player inventory saves BUT NOT THE SILVER BACKPACK.
- * Which means that when I log out and back in again, I can find the extra backpack inside my player inventory *and* inside the silver backpack.
- * IDEA: Maybe this is because it deserialises upon log in, and then a new Inventory instance is initialised even if the game hasn't destroyed the old instance!
  * 
  * MOD INCOMPATIBILITY: Seems to be incompatible with RRRNpcs.dll and RRRBetterRaids.dll (seperately). Gotta figure out what's going on there.
  * 

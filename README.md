@@ -36,3 +36,4 @@ Please let me know if you find any additional bugs, issues or incompatibilities.
 Thunderstore: thunderstore
 Nexusmods: nexus
 GitHub: https://github.com/Emrik-North/JotunnBackpacks
+

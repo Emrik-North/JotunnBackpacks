@@ -21,6 +21,7 @@ Most of this project is the result of the hard work of these people. All I've do
  * There seems to be an incompatibility with [RRRNpcs](https://valheim.thunderstore.io/package/neurodr0me/RRRNpcs/) [RRRBetterRaids](https://valheim.thunderstore.io/package/neurodr0me/RRRBetterRaids/). Will want to find a solution to that before public release.
  * Test how this works together with [Server Side Characters](https://valheim.thunderstore.io/package/HackShardGaming/World_of_Valheim_SSC/).
  * Test whether Jotunn's NetworkCompatibility attribute works properly.
+ * Change _GetTotalWeight_Patch_ to add Inventory weights directly to backpack ExtendedItemData m_weight, and also eject backpacks-inside-backpacks as a Prefix before GetTotalWeight()
  * Do a final check for all features, and try my darndest to break things before it's ready for official release.
 
 ### Server info

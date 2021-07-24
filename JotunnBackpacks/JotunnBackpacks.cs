@@ -60,7 +60,7 @@ namespace JotunnBackpacks
         private static Container backpackContainer; // Only need a single Container, I think, because only the contents (Inventory) vary between backpacks, not sizes.
 
         // Emrik's adventures
-        public static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only CapeIronBackpack and CapeSilverBackpack from CinnaBunn)
+        public static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only $item_cape_ironbackpack and $item_cape_silverbackpack from CinnaBunn)
         public static ItemDrop.ItemData backpackEquipped; // Backpack object currently equipped
         public static List<ItemDrop.ItemData> backpacksToSave = new List<ItemDrop.ItemData>(); // All the backpack objects modified by player since last time they were saved
 
@@ -77,8 +77,8 @@ namespace JotunnBackpacks
             assets.LoadAssets();
             assets.AddTranslations();
             assets.AddMockedItems();
-            backpackTypes.Add("CapeIronBackpack");
-            backpackTypes.Add("CapeSilverBackpack");
+            backpackTypes.Add("$item_cape_ironbackpack");
+            backpackTypes.Add("$item_cape_silverbackpack");
 
             hotKey = Config.Bind<string>("General", "HotKey", "i", "Hotkey to open backpack.");
 
@@ -96,9 +96,14 @@ namespace JotunnBackpacks
         //  This is the code appended to the NewExtendedItemData event that we're catching, and the argument passed in automatically is the newly generated extended item data.
         public static void OnNewExtendedItemData(ExtendedItemData itemData)
         {
+            // TODO: What's the difference between calling itemData.dropPrefab.name and itemData.m_shared.m_name???
+            // Apparently having the RRRNpcs.dll in the game makes the former throw a nullreference when a backpack is spawned, but not the latter.
+
+
             // I check whether the item created is of a type contained in backpackTypes
-            if (backpackTypes.Contains(itemData.m_dropPrefab.name))
+            if (backpackTypes.Contains(itemData.m_shared.m_name))
             {
+                Jotunn.Logger.LogMessage($"OnNewExtendedItemData! itemData.m_shared.m_name: {itemData.m_shared.m_name}");
 
                 // Create an instance of an Inventory type
                 Inventory inventoryInstance = NewInventoryInstance();
@@ -106,7 +111,7 @@ namespace JotunnBackpacks
                 // Add an empty BackpackComponent to the backpack item
                 itemData.AddComponent<BackpackComponent>();
 
-                Jotunn.Logger.LogMessage($"New backpack created! Adding an Inventory component to it.");
+                Jotunn.Logger.LogMessage("New backpack created! Adding an Inventory component to it.");
 
                 // Assign the Inventory instance to the backpack item's BackpackComponent
                 itemData.GetComponent<BackpackComponent>().SetBackpackInventory(inventoryInstance);
@@ -132,7 +137,7 @@ namespace JotunnBackpacks
             // If a match is found, return the backpack ItemData object.
             foreach (ItemDrop.ItemData item in equippedItems)
             {
-                if (backpackTypes.Contains(item.m_dropPrefab.name))
+                if (backpackTypes.Contains(item.m_shared.m_name))
                 {
                     return item;
                 }
@@ -234,10 +239,70 @@ namespace JotunnBackpacks
             }
         }
 
+        private static void EjectBackpacks(Inventory inventory)
+        {
+            // Get a list of all items in the Inventory object.
+            List<ItemDrop.ItemData> items = inventory.GetAllItems();
+
+            // Go through all the items, match them for any of the names in backpackTypes.
+            foreach (ItemDrop.ItemData item in items)
+            {
+                if (backpackTypes.Contains(item.m_shared.m_name))
+                {
+                    item.m_dropPrefab.GetInstanceID();
+                    ItemDrop.DropItem(item, 1, Player.m_localPlayer.transform.position, Quaternion.identity);
+                }
+            }
+        }
+
+        // TODO:
+        // PREFIX check the inventory for backpacks, and update each backpack ItemData.Extended().m_shared.m_weight with the GetTotalWeight of their unique Inventories, multiplied by their backpackWeightMult.
+        // THEN GetTotalWeight of the player Inventory.
+        // POSTFIX multiply the player inventory 
+        // 
+        // ALSO in the Prefix, before updating the weight of backpack ItemDatas, check the backpack Inventory for backpack items, and eject them if any are found.
+
+        // TODO: Make Inventories update the _backpack item's_ weight, rather than applying a += on the __result. Skips over all the recursion nonsense, and also looks more sensicle in game.
         [HarmonyPatch(typeof(Inventory), "GetTotalWeight")]
         [HarmonyPriority(Priority.Last)]
         static class GetTotalWeight_Patch
         {
+            /*
+            static void Prefix(Inventory __instance)
+            {
+
+                // If the current Inventory instance is a backpack, eject all backpacks inside
+                if (__instance.GetName() == "Backpack")
+                {
+                    EjectBackpacks(__instance);
+
+                }
+
+                if (__instance.GetName() == "Backpack")
+                {
+                    // Get a list of all items on the player.
+                    List<ItemDrop.ItemData> items = __instance.GetAllItems();
+
+                    // Go through all the items, match them for any of the names in backpackTypes.
+                    foreach (ItemDrop.ItemData item in items)
+                    {
+                        if (backpackTypes.Contains(item.m_shared.m_name))
+                        {
+                            // ReferenceEquals checks if __instance is the same object instance as the current backpack Inventory instance in the loop.
+                            // This is so that we can get to the ItemData instance by knowing the Inventory instance.
+                            if (ReferenceEquals(item.Extended().GetComponent<BackpackComponent>().backpackInventory, __instance))
+                            {
+                                // Just testing stuff here
+                                Jotunn.Logger.LogMessage("__INSTANCE IS BACKPACK INVENTORY. SETTING m_weight TO 131.");
+                                item.Extended().m_shared.m_weight = 131;
+                            }
+
+                        }
+                    }
+                }
+            }
+            */
+
             static void Postfix(Inventory __instance, ref float __result)
             {
                 // If calculating the weight of the player's inventory, run this:
@@ -250,9 +315,10 @@ namespace JotunnBackpacks
                     // For all matches found, add the backpack inventory weight to the total weight.
                     foreach (ItemDrop.ItemData item in items)
                     {
-                        if (backpackTypes.Contains(item.m_dropPrefab.name))
+                        if (backpackTypes.Contains(item.m_shared.m_name))
                         {
                             __result += item.Extended().GetComponent<BackpackComponent>().backpackInventory.GetTotalWeight();
+                            
                         }
                     }
                 }
@@ -270,7 +336,7 @@ namespace JotunnBackpacks
                     // For all matches found, add the backpack inventory weight to the total weight.
                     foreach (ItemDrop.ItemData item in items)
                     {
-                        if (backpackTypes.Contains(item.m_dropPrefab.name))
+                        if (backpackTypes.Contains(item.m_shared.m_name))
                         {
                             // The backpack inventory currently being calculated contains a backpack!
                             containsBackpack = true;
@@ -306,7 +372,7 @@ namespace JotunnBackpacks
                     // For each match found, check if the Inventory of that backpack is teleportable.
                     foreach (ItemDrop.ItemData item in items)
                     {
-                        if (backpackTypes.Contains(item.m_dropPrefab.name))
+                        if (backpackTypes.Contains(item.m_shared.m_name))
                         {
                             canTeleport = item.Extended().GetComponent<BackpackComponent>().backpackInventory.IsTeleportable();
                             if (!canTeleport)
@@ -327,7 +393,7 @@ namespace JotunnBackpacks
 
                     foreach (ItemDrop.ItemData item in items)
                     {
-                        if (backpackTypes.Contains(item.m_dropPrefab.name))
+                        if (backpackTypes.Contains(item.m_shared.m_name))
                         {
                             canTeleport = item.Extended().GetComponent<BackpackComponent>().backpackInventory.IsTeleportable();
                             if (!canTeleport)

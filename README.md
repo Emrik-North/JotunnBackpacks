@@ -2,9 +2,11 @@
 
 A work in project. Almost done.
 
-This mod introduces two backpacks (thanks to Evie) to the game. They increase your carry capacity and lets you open their inventories with a configurable hotkey ('i' by default). Items stored in the backpacks have their weight reduced by 25%. 
+This mod introduces two backpacks (thanks to Evie) to the game. They increase your carry capacity and lets you open their inventories with a configurable hotkey (_i_ by default). Items stored in the backpacks have their weight reduced by 25%, but they also reduce your movement speed.
 
-Each backpack has its own separate inventory that's preserved even when you toss the backpack to another player on the server. You also cannot teleport with unteleportable items inside the backpack, and this check is recursive, so you can't exploit it by putting backpacks inside backpacks. Don't be silly! You also cannot exploit the weight reduction by putting backpacks inside backpacks, since the weight reduction only applies to the innermost backpack(s). Please, stop being silly!
+Each backpack has its own separate inventory that's preserved even when you toss the backpack to another player on the server. You also cannot teleport with unteleportable items inside the backpack. This check is recursive, so you can't exploit it by putting backpacks inside backpacks. Don't be silly! You also cannot exploit the weight reduction by putting backpacks inside backpacks, since the weight reduction only applies to the innermost backpack(s). Please, stop being silly!
+
+(todo image)
 
 ### Credit goes to
  * [Cinnabunn/Evie](https://github.com/capnbubs) for their 'eviesbackpacks' assets inside [JotunnModExample](https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded).

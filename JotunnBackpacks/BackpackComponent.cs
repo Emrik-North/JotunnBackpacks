@@ -20,10 +20,15 @@ namespace JotunnBackpacks
             // Don't think I need to run any code here. Creating the class is all that's needed? I don't even understand the syntax here.
         }
 
-        public void SetBackpackInventory(Inventory inventoryInstance)
+        public void SetInventory(Inventory inventoryInstance)
         {
             backpackInventory = inventoryInstance;
             Save(); // This writes the new data to the ItemData object, which will be saved whenever game saves the ItemData object.
+        }
+
+        public Inventory GetInventory()
+        {
+            return backpackInventory;
         }
 
         public override string Serialize()

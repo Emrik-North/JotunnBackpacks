@@ -21,7 +21,7 @@ public class BackpackAssets
 
     public void LoadAssets()
     {
-        // Load asset bundle from embedded resources
+        // Load backpack asset bundle from embedded resources
         Jotunn.Logger.LogInfo($"Embedded resources: {string.Join(",", typeof(JotunnBackpacks.JotunnBackpacks).Assembly.GetManifestResourceNames())}");
         EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("eviesbackpacks", typeof(JotunnBackpacks.JotunnBackpacks).Assembly);
         BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab");
@@ -33,6 +33,7 @@ public class BackpackAssets
         LocalizationManager.Instance.AddLocalization(new LocalizationConfig("English")
         {
             Translations = {
+                {"piece_backpackbag", "Next time, please don't try to put a backpack inside a backpack, "},
                 {"item_cape_silverbackpack", "Fine Backpack"},
                 {"item_cape_silverbackpack_description", "A Fine backpack, complete with buckles and fine leather straps. Increases carry capacity by 200."},
                 {"se_silverbackpackstrength_start", "Your carry capacity has been increased."},

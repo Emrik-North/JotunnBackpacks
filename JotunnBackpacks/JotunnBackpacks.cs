@@ -40,6 +40,8 @@ using ExtendedItemDataFramework;
  * TODO: Backpacks on the ground while logging off will despawn! Why aren't they saved in the world?
  * 
  * TODO: If .dll is on a server, disconnect clients without the mod.
+ * 
+ * TODO: Backpack item weights aren't stored when game closes. It's reset to 4 again upon game start.
  */
 
 namespace JotunnBackpacks
@@ -97,6 +99,7 @@ namespace JotunnBackpacks
 
             harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
+
         }
 
         //  This is the code appended to the NewExtendedItemData event that we're catching, and the argument passed in automatically is the newly generated extended item data.
@@ -118,6 +121,7 @@ namespace JotunnBackpacks
                 // Assign the Inventory instance to the backpack item's BackpackComponent
                 itemData.GetComponent<BackpackComponent>().SetInventory(inventoryInstance);
             }
+
         }
 
         public static Inventory NewInventoryInstance()
@@ -128,6 +132,7 @@ namespace JotunnBackpacks
                 (int)backpackSize.x,
                 (int)backpackSize.y
                 );
+
         }
 
         private static ItemDrop.ItemData GetEquippedBackpack()
@@ -147,6 +152,7 @@ namespace JotunnBackpacks
 
             // Return null if no backpacks are found.
             return null;
+
         }
 
         // This method is from Aedenthorn's BackpackRedux.
@@ -176,6 +182,7 @@ namespace JotunnBackpacks
             // Return false if GetEquippedBackpack() returns null.
             Jotunn.Logger.LogMessage("No backpack equipped. Can't open any.");
             return false;
+
         }
 
         private static void OpenBackpack()
@@ -192,6 +199,7 @@ namespace JotunnBackpacks
             {
                 backpacksToSave.Add(backpackEquipped);
             }
+
         }
 
         [HarmonyPatch(typeof(InventoryGui), "Update")]
@@ -220,6 +228,7 @@ namespace JotunnBackpacks
                     OpenBackpack();
                 }
             }
+
         }
 
         [HarmonyPatch(typeof(Game), "SavePlayerProfile")]
@@ -240,6 +249,7 @@ namespace JotunnBackpacks
                     backpacksToSave.Clear();
                 }
             }
+
         }
 
         /* // Just in case I need this method later, I'll leave it here
@@ -288,10 +298,26 @@ namespace JotunnBackpacks
                 // I think the new dropped backpack then has a new GUID, but it gets assigned the same Inventory instance, so all the items are preserved.
                 // I haven't explored this, because it seems to work, but just writing this here in case I need to debug something related.
             }
+
         }
 
-        // TODO: Maybe patch UpdateTotalWeight() to check the inventory for backpacks and update them before updating the inventory?
-        // TODO: Nope, just save the backpack instances after you've weighed them.
+        [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetWeight))]
+        static class GetWeight_Patch
+        {
+            static void Postfix(ItemDrop.ItemData __instance, ref float __result)
+            {
+                // If the item is a backpack...
+                if (backpackTypes.Contains(__instance.m_shared.m_name))
+                {
+                    // ... update the backpack's item weight by adding the weight of its inventory.
+                    var inventory = __instance.Extended().GetComponent<BackpackComponent>().GetInventory();
+                    var inventoryWeight = inventory.GetTotalWeight();
+
+                    __result += inventoryWeight;
+                }
+            }
+
+        }
 
         [HarmonyPatch(typeof(Inventory), "GetTotalWeight")]
         [HarmonyPriority(Priority.Last)]
@@ -336,7 +362,11 @@ namespace JotunnBackpacks
                     var itemPrefab = ObjectDB.instance.GetItemPrefab(backpackInstance.m_dropPrefab.name);
                     float defaultWeight = itemPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_weight;
 
+                    // TODO: How to check if ItemData saves weight or not
+                    
+
                     backpackInstance.Extended().m_shared.m_weight = __result * backpackWeightMult + defaultWeight;
+
 
                     // Update the player's inventory weight after you've updated the backpack's item weight, since that doesn't happen automatically
                     Player.m_localPlayer.GetInventory().UpdateTotalWeight();
@@ -350,8 +380,7 @@ namespace JotunnBackpacks
         {
             static void Postfix(Inventory __instance, ref bool __result)
             {
-                bool canTeleport;
-
+                // If the inventory being checked for teleportability is the Player's inventory, see whether it contains any backpacks, and then check the backpack inventories for teleportability too
                 if (__instance == Player.m_localPlayer.GetInventory())
                 {
                     // Get a list of all items on the player.
@@ -363,8 +392,7 @@ namespace JotunnBackpacks
                     {
                         if (backpackTypes.Contains(item.m_shared.m_name))
                         {
-                            canTeleport = item.Extended().GetComponent<BackpackComponent>().GetInventory().IsTeleportable();
-                            if (!canTeleport)
+                            if (!item.Extended().GetComponent<BackpackComponent>().GetInventory().IsTeleportable())
                             {
                                 // A backpack's inventory inside player inventory was not teleportable.
                                 __result = false;
@@ -374,28 +402,7 @@ namespace JotunnBackpacks
                     }
                 }
 
-                // Any time the game checks a backpack inventory for teleportability, it will check its inventory for backpacks and call IsTeleportable() for those too. This works recursively, so good luck trying to exploit it!
-                else if (__instance.GetName() == "Backpack") // OBS! All backpack inventories must share this inventory name for this to work.
-                {
-                    // Get a list of all items in the backpack.
-                    List<ItemDrop.ItemData> items = __instance.GetAllItems();
-
-                    foreach (ItemDrop.ItemData item in items)
-                    {
-                        if (backpackTypes.Contains(item.m_shared.m_name))
-                        {
-                            canTeleport = item.Extended().GetComponent<BackpackComponent>().GetInventory().IsTeleportable();
-                            if (!canTeleport)
-                            {
-                                Jotunn.Logger.LogMessage("Backpack contains a backpack that cannot be teleported!");
-                                __result = false;
-                                return;
-                            }
-                        }
-                    }
-
-                }
-
+                // We don't need to search for backpacks inside backpacks, because those are immediately chucked out when you try to put them in anyway.
             }
 
 

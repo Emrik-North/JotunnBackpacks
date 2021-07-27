@@ -14,10 +14,12 @@ namespace JotunnBackpacks
     public class BackpackComponent : BaseExtendedItemComponent
     {
         public Inventory backpackInventory;
+        public float backpackItemWeight;
+        private char customDelimiter = 'ø';
 
         public BackpackComponent(ExtendedItemData parent) : base(typeof(BackpackComponent).AssemblyQualifiedName, parent)
         {
-            // Don't think I need to run any code here. Creating the class is all that's needed? I don't even understand the syntax here.
+            // No code needed here.
         }
 
         public void SetInventory(Inventory inventoryInstance)
@@ -31,13 +33,26 @@ namespace JotunnBackpacks
             return backpackInventory;
         }
 
+        public void SetItemWeight(float weight)
+        {
+            backpackItemWeight = weight;
+            Save();
+        }
+
+        public float GetItemWeight()
+        {
+            return backpackItemWeight;
+        }
+
         public override string Serialize()
         {
+            // Store the Inventory as a ZPackage
             ZPackage pkg = new ZPackage();
             backpackInventory.Save(pkg);
-            string data = pkg.GetBase64();
+            string inventoryData = pkg.GetBase64();
 
-            return data;
+            // Return both the inventoryData and the backpackItemWeight in a combined string to be deserialized in the method below
+            return inventoryData + customDelimiter + backpackItemWeight.ToString();
         }
 
         // This code is run on game start for objects with a BackpackComponent, and it converts the inventory information from string format (ZPackage) to object format (Inventory) so the game can use it.
@@ -45,6 +60,11 @@ namespace JotunnBackpacks
         {
             try
             {
+                // First split the data string
+                string[] dataArray = data.Split(customDelimiter);
+                string inventoryData = dataArray[0];
+                string weightData = dataArray[1];
+
                 // When the game closes, it saves data from ItemData objects by storing it as strings in the save file, and then it destroys all instances of objects.
                 // So upon game start, we need to initialise new objects and store the saved data into those.
                 // If you don't reinitialise your Inventory objects on game start, you'll get a NullReferenceError when the game tries to access those inventories.
@@ -56,10 +76,12 @@ namespace JotunnBackpacks
                     backpackInventory = JotunnBackpacks.NewInventoryInstance();
                 }
 
-                // Deserialising saved data and storing it into the newly initialised Inventory instance.
-                ZPackage pkg = new ZPackage(data);
+                // Deserialising saved inventory data and storing it into the newly initialised Inventory instance.
+                ZPackage pkg = new ZPackage(inventoryData);
                 backpackInventory.Load(pkg);
 
+                // Initialise the backpack item weight as a float
+                backpackItemWeight = float.Parse(weightData);
             }
             catch (Exception ex)
             {

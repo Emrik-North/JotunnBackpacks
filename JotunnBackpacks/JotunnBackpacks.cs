@@ -29,8 +29,6 @@ using ExtendedItemDataFramework;
 /* TODO:
  * Enforce everyone on server must have mod.
  * 
- * MOD INCOMPATIBILITY: Seems to be incompatible with RRRNpcs.dll and RRRBetterRaids.dll (seperately). Gotta figure out what's going on there.
- * 
  * TODO SERVER! Backpack inventories do not get saved (neither if the backpack is in a chest or if it's on the player) on a server without the mod, at least one with SSC (haven't tested without).
  * If the server has the mod plugin, inventories get saved, both with backpacks in chests and on player.
  * TODO: Test with SSC.
@@ -41,7 +39,9 @@ using ExtendedItemDataFramework;
  * 
  * TODO: If .dll is on a server, disconnect clients without the mod.
  * 
- * TODO: Backpack item weights aren't stored when game closes. It's reset to 4 again upon game start.
+ * TODO: Sometimes player inventory is loaded with all durability-meters displaying as 0, even though they're at full durability. I can use the sword and it updates its displayed durability to its real value.
+ * UPDATE: It's not to do with the items themselves, but the slots they're in.
+ * 
  */
 
 namespace JotunnBackpacks

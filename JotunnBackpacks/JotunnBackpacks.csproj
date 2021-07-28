@@ -48,7 +48,7 @@
       <HintPath>..\packages\ExtendedItemDataFramework.1.0.2\ExtendedItemDataFramework.dll</HintPath>
     </Reference>
     <Reference Include="Jotunn, Version=2.1.2.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\JotunnLib.2.1.2\lib\net462\Jotunn.dll</HintPath>
+      <HintPath>..\packages\ValheimModding-Jotunn-2.2.0\plugins\Jotunn.dll</HintPath>
     </Reference>
     <Reference Include="MonoMod, Version=21.4.21.3, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MonoMod.21.4.21.3\lib\net40\MonoMod.exe</HintPath>

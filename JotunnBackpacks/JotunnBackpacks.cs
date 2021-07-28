@@ -19,6 +19,7 @@
 using BepInEx;
 using BepInEx.Configuration;
 using Jotunn.Utils;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -97,6 +98,9 @@ namespace JotunnBackpacks
             // The "NewExtendedItemData" event is run whenever a newly created item is extended by the ExtendedItemDataFramework.dll, I'm just catching it and appending my own code at the end of it
             ExtendedItemData.NewExtendedItemData += OnNewExtendedItemData;
 
+            // TODO: "LoadExtendedItemData" event is run whenever an item is loaded. We use this to check whether the item is a backpack, and then update the backpack's item weight with its inventory weight.
+            ExtendedItemData.LoadExtendedItemData += OnLoadExtendedItemData;
+
             harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
 
@@ -116,12 +120,39 @@ namespace JotunnBackpacks
                 Inventory inventoryInstance = NewInventoryInstance();
 
                 // Add an empty BackpackComponent to the backpack item
-                itemData.AddComponent<BackpackComponent>();
+                var component = itemData.AddComponent<BackpackComponent>();
 
                 // Assign the Inventory instance to the backpack item's BackpackComponent
-                itemData.GetComponent<BackpackComponent>().SetInventory(inventoryInstance);
+                component.SetInventory(inventoryInstance);
+                component.SetWeight(0);
             }
 
+        }
+
+        public static void OnLoadExtendedItemData(ExtendedItemData itemData)
+        {
+
+            if (backpackTypes.Contains(itemData.m_shared.m_name))
+            {
+                // TODO
+                // Tell the game that the backpack inventory weight needs to be updated, which in turn calls UpdateTotalWeight() on the player inventory.
+                // itemData.Extended().GetComponent<BackpackComponent>().GetInventory().Changed();
+
+                // Get the unique backpack weight stored previously
+                var eidf_weight = itemData.Extended().GetComponent<BackpackComponent>()?.GetWeight();
+
+                if (eidf_weight != null)
+                {
+                    // Add the backpack instance's item weight with its inventory weight, stored in its BackpackComponent
+                    // The default value of a float type is 0 if nothing has been assigned to it, so it's like a null check but for value types TODO
+                    if (eidf_weight > 0) itemData.m_shared.m_weight = (float)eidf_weight;
+                }
+                else
+                {
+                    Jotunn.Logger.LogError("OnLoadExtendedItemData: Tried to assign backpack item weight, but its BackpackComponent was null.");
+                }
+            }
+            
         }
 
         public static Inventory NewInventoryInstance()
@@ -191,7 +222,7 @@ namespace JotunnBackpacks
             if (backpackContainer == null)
                 backpackContainer = Player.m_localPlayer.gameObject.AddComponent<Container>();
 
-            AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackEquipped.Extended().GetComponent<BackpackComponent>().backpackInventory; // GetBackpackInventory(backpackEquipped);
+            AccessTools.FieldRefAccess<Container, Inventory>(backpackContainer, "m_inventory") = backpackEquipped.Extended().GetComponent<BackpackComponent>().GetInventory();
             InventoryGui.instance.Show(backpackContainer);
 
             // If backpacksToSave list doesn't already have this backpack in it, add it to the list so that the code knows to save the contents of this backpack when it saves the player profile
@@ -304,25 +335,30 @@ namespace JotunnBackpacks
         [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetWeight))]
         static class GetWeight_Patch
         {
+
             static void Postfix(ItemDrop.ItemData __instance, ref float __result)
             {
-                // If the item is a backpack...
+
                 if (backpackTypes.Contains(__instance.m_shared.m_name))
                 {
-                    // ... update the backpack's item weight by adding the weight of its inventory.
-                    var inventory = __instance.Extended().GetComponent<BackpackComponent>().GetInventory();
-                    var inventoryWeight = inventory.GetTotalWeight();
+                    if (__instance.IsExtended())
+                    {
+                        // TODO comment
+                        float inventoryWeight = __instance.Extended().GetComponent<BackpackComponent>().GetWeight();
 
-                    __result += inventoryWeight;
+                        __result += inventoryWeight * backpackWeightMult; // If the BackpackComponent's weight hasn't been assigned yet, its default value is zero anyway.
+                    }
                 }
             }
 
         }
 
         [HarmonyPatch(typeof(Inventory), "GetTotalWeight")]
-        [HarmonyPriority(Priority.Last)]
         static class GetTotalWeight_Patch
         {
+            // By default, the GetTotalWeight() method just pulls from a variable m_totalWeight, and that variable doesn't update unless UpdateTotalWeight() is called.
+            // We can call Inventory.Changed(); to tell the code to run UpdateTotalWeight() on the inventory.
+
             static void Prefix(Inventory __instance, ref float __result)
             {
                 // If the current Inventory instance belongs to a backpack...
@@ -348,28 +384,32 @@ namespace JotunnBackpacks
                     }
                 }
             }
-            
+
             static void Postfix(Inventory __instance, ref float __result)
             {
                 // If the current Inventory instance belongs to a backpack...
                 if (__instance.GetName() == "Backpack")
                 {
-                    // Update the backpack's item weight by adding the weight of the inventory we're weighing
-                    // You can only ever access the Inventory of your equipped backpack, so we know that this Inventory instance belongs to the backpack you have equipped
-                    var backpackInstance = GetEquippedBackpack();
+                    var playerInventory = Player.m_localPlayer.GetInventory();
+                    List<ItemDrop.ItemData> items = playerInventory.GetEquipedtems();
 
-                    // Get the default weight of the backpack item by going through ObjectDB
-                    var itemPrefab = ObjectDB.instance.GetItemPrefab(backpackInstance.m_dropPrefab.name);
-                    float defaultWeight = itemPrefab.GetComponent<ItemDrop>().m_itemData.m_shared.m_weight;
+                    foreach (ItemDrop.ItemData item in items)
+                    {
+                        Jotunn.Logger.LogMessage(item.m_shared.m_name);
+                        if (backpackTypes.Contains(item.m_shared.m_name))
+                        {
+                            Jotunn.Logger.LogWarning($"Setting backpack component eidf weight: {__result}");
+                            // Store the weight of the backpack into its EIDF component, which is read in the GetWeight_Patch
+                            item.Extended().GetComponent<BackpackComponent>().SetWeight(__result);
 
-                    // TODO: How to check if ItemData saves weight or not
-                    
+                            // Tell the code that the inventory has changed, so that it calls UpdateTotalWeight() on player inventory
+                            playerInventory.Changed();
+                        }
+                    }
 
-                    backpackInstance.Extended().m_shared.m_weight = __result * backpackWeightMult + defaultWeight;
-
-
-                    // Update the player's inventory weight after you've updated the backpack's item weight, since that doesn't happen automatically
-                    Player.m_localPlayer.GetInventory().UpdateTotalWeight();
+                    // Update the player's inventory weight whenever a backpack's inventory has been weighed, since that doesn't happen automatically
+                    // Player.m_localPlayer.GetInventory().UpdateTotalWeight();
+                    // TODO: Do I need to update player inventory weight here? Have to be carefwl with the loops.
                 }
             }
 

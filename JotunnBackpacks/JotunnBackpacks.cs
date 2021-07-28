@@ -58,7 +58,7 @@ namespace JotunnBackpacks
     {
         public const string PluginGUID = "Emrik-North.JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
-        public const string PluginVersion = "0.0.1";
+        public const string PluginVersion = "0.0.2";
 
         // From Aedenthorn's Backpack Redux
         public static ConfigEntry<string> hotKey;
@@ -386,9 +386,29 @@ namespace JotunnBackpacks
                 // We don't need to search for backpacks inside backpacks, because those are immediately chucked out when you try to put them in anyway.
             }
 
+        }
+
+        [HarmonyPatch(typeof(EnvMan), "IsCold")]
+        static class IsCold_Patch
+        {
+            static void Postfix(bool __result)
+            {
+                // If you're wearing a backpack, you are not cold.
+                if (GetEquippedBackpack() != null) __result = false;
+            }
 
         }
 
+        [HarmonyPatch(typeof(EnvMan), "IsFreezing")]
+        static class IsFreezing_Patch
+        {
+            static void Postfix(bool __result)
+            {
+                // If you're wearing a backpack, you are not freezing.
+                if (GetEquippedBackpack() != null) __result = false;
+            }
+
+        }
 
     }
 }

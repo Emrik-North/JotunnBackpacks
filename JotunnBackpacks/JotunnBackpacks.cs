@@ -33,14 +33,12 @@ using ExtendedItemDataFramework;
  * If the server has the mod plugin, inventories get saved, both with backpacks in chests and on player.
  * TODO: Test with SSC.
  * 
- * TODO: Make it so that backpacks also protect against the cold, at least the silver one!
+ * TODO: If .dll is on a server, disconnect clients without the mod.
  * 
  * TODO: Backpacks on the ground while logging off will despawn! Why aren't they saved in the world?
  * 
- * TODO: If .dll is on a server, disconnect clients without the mod.
- * 
  * TODO: Sometimes player inventory is loaded with all durability-meters displaying as 0, even though they're at full durability. I can use the sword and it updates its displayed durability to its real value.
- * UPDATE: It's not to do with the items themselves, but the slots they're in.
+ * It's not to do with the items themselves, but the slots they're in.
  * 
  */
 
@@ -70,7 +68,7 @@ namespace JotunnBackpacks
         // Emrik's adventures
         private static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only $item_cape_ironbackpack and $item_cape_silverbackpack from CinnaBunn)
         private static ItemDrop.ItemData backpackEquipped; // Backpack object currently equipped
-        private static List<ItemDrop.ItemData> backpacksToSave = new List<ItemDrop.ItemData>(); // All the backpack objects modified by player since last time they were saved
+        public static List<ItemDrop.ItemData> backpacksToSave = new List<ItemDrop.ItemData>(); // All the backpack objects modified by player since last time they were saved
         public static string backpackInventoryName = "Backpack";
 
         // Emrik is new to C#. I took dealing with the assets out of the main file to make it tidier, and put it into its own class outside the file.
@@ -204,78 +202,6 @@ namespace JotunnBackpacks
 
         }
 
-        // This method is from Aedenthorn's BackpackRedux.
-        [HarmonyPatch(typeof(InventoryGui), "Update")]
-        static class InventoryGui_Update_Patch
-        {
-            static void Postfix(Animator ___m_animator, ref Container ___m_currentContainer)
-            {
-                if (!AedenthornUtils.CheckKeyDown(hotKey.Value) || !Player.m_localPlayer || !___m_animator.GetBool("visible"))
-                    return;
-
-                if (opening)
-                {
-                    opening = false;
-                    return;
-                }
-
-                if (___m_currentContainer != null && ___m_currentContainer == backpackContainer)
-                {
-                    ___m_currentContainer = null;
-                }
-
-                else if (CanOpenBackpack())
-                {
-                    OpenBackpack();
-                }
-            }
-
-        }
-
-        [HarmonyPatch(typeof(Game), "SavePlayerProfile")]
-        static class SavePlayerProfile_Patch
-        {
-            static void Prefix()
-            {
-                // Iff there are any items inside the backpacksToSave list, go through a foreach loop to save them all.
-                if (backpacksToSave.Any())
-                {
-                    Jotunn.Logger.LogMessage("Saving backpacks.");
-                    foreach (ItemDrop.ItemData backpack in backpacksToSave)
-                    {
-                        backpack.Extended().Save();
-                    }
-
-                    // Since we have saved all the backpacks we needed to save, we can clear the list.
-                    backpacksToSave.Clear();
-                }
-            }
-
-        }
-
-        /* // Just in case I need this method later, I'll leave it here
-        private static ItemDrop.ItemData GetBackpackRefFromInventory(Inventory backpackInventory)
-        {
-            // Get a list of all items in player inventory.
-            List<ItemDrop.ItemData> items = Player.m_localPlayer.GetInventory().GetAllItems();
-
-            // Go through all the items, match them for any of the names in backpackTypes.
-            foreach (ItemDrop.ItemData item in items)
-            {
-                if (backpackTypes.Contains(item.m_shared.m_name))
-                {
-                    // If backpackInventory is the same instance as the item's Inventory instance, then we know that this item is the one we're looking for
-                    if (Object.ReferenceEquals(item.Extended().GetComponent<BackpackComponent>().GetInventory(), backpackInventory))
-                    {
-                        return item;
-                    }
-                }
-            }
-
-            // Return null if no backpacks were found.
-            return null;
-        */
-
         private static void EjectBackpack(ItemDrop.ItemData item, Player player, Inventory backpackInventory)
         {
             var playerInventory = player.GetInventory();
@@ -302,6 +228,74 @@ namespace JotunnBackpacks
 
         }
 
+        // This method is from Aedenthorn's BackpackRedux.
+        [HarmonyPatch(typeof(InventoryGui), nameof(InventoryGui.Update))]
+        static class InventoryGui_Update_Patch
+        {
+            static void Postfix(Animator ___m_animator, ref Container ___m_currentContainer)
+            {
+                if (!AedenthornUtils.CheckKeyDown(hotKey.Value) || !Player.m_localPlayer || !___m_animator.GetBool("visible"))
+                    return;
+
+                if (opening)
+                {
+                    opening = false;
+                    return;
+                }
+
+                if (___m_currentContainer != null && ___m_currentContainer == backpackContainer)
+                {
+                    ___m_currentContainer = null;
+                }
+
+                else if (CanOpenBackpack())
+                {
+                    OpenBackpack();
+                }
+            }
+
+        }
+
+        [HarmonyPatch(typeof(Game), nameof(Game.SavePlayerProfile))]
+        static class SavePlayerProfile_Patch
+        {
+            static void Prefix()
+            {
+                // Iff there are any items inside the backpacksToSave list, loop through and save them all.
+                if (backpacksToSave.Any())
+                {
+                    Jotunn.Logger.LogMessage("Saving backpacks.");
+                    foreach (ItemDrop.ItemData backpack in backpacksToSave)
+                    {
+                        Jotunn.Logger.LogMessage($"Saving: {backpack.GetUniqueId()}");
+                        backpack.Extended().Save();
+                    }
+
+                    // Since we have saved all the backpacks we needed to save, we can clear the list.
+                    backpacksToSave.Clear();
+                }
+            }
+
+        }
+
+        // When you drop an item, you remove the original instance and drop a cloned instance.
+        // This is a problem if the backpack to be dropped is in the backpacksToSave list, since the clone won't automatically get added to it.
+        // So we patch the DropItem method to check if the instance is in the list, and then add the cloned instance to the list if it is.
+        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.DropItem))]
+        static class ItemDrop_DropItem_Patch
+        {
+            static void Postfix(ItemDrop.ItemData item, ItemDrop __result)
+            {
+                if (backpacksToSave.Contains(item))
+                {
+                    // If the instance is in the backpacksToSave list, remove the original and add the cloned instance to the backpacksToSave list.
+                    backpacksToSave.Remove(item);
+                    backpacksToSave.Add(__result.m_itemData);
+                    __result.m_itemData.Extended().Save();
+                }
+            }
+        }
+
         [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetWeight))]
         static class GetWeight_Patch
         {
@@ -325,7 +319,7 @@ namespace JotunnBackpacks
 
         }
 
-        [HarmonyPatch(typeof(Inventory), "UpdateTotalWeight")]
+        [HarmonyPatch(typeof(Inventory), nameof(Inventory.UpdateTotalWeight))]
         static class UpdateTotalWeight_Patch
         {
             static void Prefix(Inventory __instance)
@@ -356,7 +350,7 @@ namespace JotunnBackpacks
 
         }
 
-       [HarmonyPatch(typeof(Inventory), "IsTeleportable")]
+       [HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable))]
         static class IsTeleportable_Patch
         {
             static void Postfix(Inventory __instance, ref bool __result)
@@ -388,10 +382,12 @@ namespace JotunnBackpacks
 
         }
 
-        [HarmonyPatch(typeof(EnvMan), "IsCold")]
+        
+        // TODO: This is very dirty... but it's here until I find out how to do it the proper way.
+        [HarmonyPatch(typeof(EnvMan), nameof(EnvMan.IsCold))]
         static class IsCold_Patch
         {
-            static void Postfix(bool __result)
+            static void Postfix(ref bool __result)
             {
                 // If you're wearing a backpack, you are not cold.
                 if (GetEquippedBackpack() != null) __result = false;
@@ -399,16 +395,17 @@ namespace JotunnBackpacks
 
         }
 
-        [HarmonyPatch(typeof(EnvMan), "IsFreezing")]
+        [HarmonyPatch(typeof(EnvMan), nameof(EnvMan.IsFreezing))]
         static class IsFreezing_Patch
         {
-            static void Postfix(bool __result)
+            static void Postfix(ref bool __result)
             {
                 // If you're wearing a backpack, you are not freezing.
                 if (GetEquippedBackpack() != null) __result = false;
             }
 
         }
+        
 
     }
 }

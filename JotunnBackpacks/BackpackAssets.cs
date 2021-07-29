@@ -55,6 +55,14 @@ public class BackpackAssets
         {
             // Create and add a custom item
             CustomItem CI = new CustomItem(BackpackIronPrefab, true);
+
+            // TODO: What's the status effect for CapeLox and CapeWolf, such that you don't get cold in the mountains? The following does not work.
+            // CI.ItemDrop.m_itemData.m_shared.m_equipStatusEffect.m_attributes = StatusEffect.StatusAttribute.ColdResistance;
+
+            // We have to set the gameobject to persistent = true to make sure it doesn't immediately despawn if dropped on the ground and the player logs out
+            // Thanks, Zarboz!!
+            CI.ItemPrefab.gameObject.GetComponent<ZNetView>().m_persistent = true;
+
             ItemManager.Instance.AddItem(CI);
 
             //Create and add a custom recipe
@@ -82,6 +90,10 @@ public class BackpackAssets
         {
             // Create and add a custom item
             CustomItem CI = new CustomItem(BackpackSilverPrefab, true);
+
+            // We have to set the gameobject to persistent = true to make sure it doesn't immediately despawn if dropped on the ground and the player logs out
+            CI.ItemPrefab.gameObject.GetComponent<ZNetView>().m_persistent = true;
+
             ItemManager.Instance.AddItem(CI);
 
             //Create and add a custom recipe

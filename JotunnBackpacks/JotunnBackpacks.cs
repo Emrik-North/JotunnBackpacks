@@ -1,6 +1,6 @@
 ﻿/* JotunnBackpacks.cs
  * 
- * CREDIT:
+ * CREDIT: TODO
  * Evie/CinnaBunn for their 'eviesbackpacks' assets inside JotunnModExample: https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded
  * Randy Knapp for their Extended Item Framework, without which I wouldn't be able to do this project: https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework
  * Aedenthorn for their BackpackRedux mod, which I learned a great deal from: https://github.com/aedenthorn/ValheimMods/blob/master/BackpackRedux/
@@ -24,21 +24,21 @@ using System.Linq;
 using UnityEngine;
 using HarmonyLib;
 using ExtendedItemDataFramework;
+using Log = Jotunn.Logger;
 
 
-/* TODO:
- * Enforce everyone on server must have mod.
+/* 
  * 
- * TODO SERVER! Backpack inventories do not get saved (neither if the backpack is in a chest or if it's on the player) on a server without the mod, at least one with SSC (haven't tested without).
- * If the server has the mod plugin, inventories get saved, both with backpacks in chests and on player.
- * TODO: Test with SSC.
- * 
- * TODO: If .dll is on a server, disconnect clients without the mod.
- * 
- * TODO: Backpacks on the ground while logging off will despawn! Why aren't they saved in the world?
+ * TODO: Test and try to break the backpacks somehow while on a server!
  * 
  * TODO: Sometimes player inventory is loaded with all durability-meters displaying as 0, even though they're at full durability. I can use the sword and it updates its displayed durability to its real value.
  * It's not to do with the items themselves, but the slots they're in.
+ * 
+ * TODO: Localization/Translation
+ * 
+ * TODO: Hotkey to drop backpack to be able to run faster out of danger, like in Outward!
+ * 
+ * TODO: Make backpacks never despawn when dropped.
  * 
  */
 
@@ -54,26 +54,29 @@ namespace JotunnBackpacks
     [NetworkCompatibility(CompatibilityLevel.EveryoneMustHaveMod, VersionStrictness.Minor)]
     internal class JotunnBackpacks : BaseUnityPlugin
     {
-        public const string PluginGUID = "Emrik-North.JotunnBackpacks";
+        public const string PluginGUID = "JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
-        public const string PluginVersion = "0.0.2";
+        public const string PluginVersion = "0.1.0";
 
-        // From Aedenthorn's Backpack Redux
-        public static ConfigEntry<string> hotKey;
-        public static Vector2 backpackSize;
-        public static float backpackWeightMult;
+        // Config entries
+        public static ConfigEntry<KeyCode> hotKey;
+        public static ConfigEntry<Vector2> backpackSize;
+        public static ConfigEntry<float> weightMultiplier;
+        public static ConfigEntry<int> carryBonusRugged;
+        public static ConfigEntry<int> carryBonusArctic;
+        public static ConfigEntry<float> speedModRugged;
+        public static ConfigEntry<float> speedModArctic;
+
+        // Initialise global variables
         private static bool opening = false;
         private static Container backpackContainer; // Only need a single Container, I think, because only the contents (Inventory) vary between backpacks, not sizes.
-
-        // Emrik's adventures
         private static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only $item_cape_ironbackpack and $item_cape_silverbackpack from CinnaBunn)
         private static ItemDrop.ItemData backpackEquipped; // Backpack object currently equipped
-        public static List<ItemDrop.ItemData> backpacksToSave = new List<ItemDrop.ItemData>(); // All the backpack objects modified by player since last time they were saved
-        public static string backpackInventoryName = "Backpack";
+        private static List<ItemDrop.ItemData> backpacksToSave = new List<ItemDrop.ItemData>(); // All the backpack objects modified by player since last time they were saved
+        private static string backpackInventoryName = "$ui_backpack_inventoryname";
 
         // Emrik is new to C#. I took dealing with the assets out of the main file to make it tidier, and put it into its own class outside the file.
         // I'm creating an instance of the class BackpackAssets, otherwise I can't use the stuff in there.
-        // I'm making this instance readonly, because I never modify it after creating it, and I assume readonly is more efficient.
         readonly BackpackAssets assets = new BackpackAssets();
 
         private Harmony harmony;
@@ -81,23 +84,66 @@ namespace JotunnBackpacks
         // Awake() is run when the game loads up.
         private void Awake()
         {
+            CreateConfigValues();
             assets.LoadAssets();
-            assets.AddTranslations();
+            assets.AddStatusEffects();
             assets.AddMockedItems();
             backpackTypes.Add("$item_cape_ironbackpack");
             backpackTypes.Add("$item_cape_silverbackpack");
-
-            hotKey = Config.Bind<string>("General", "HotKey", "i", "Hotkey to open backpack.");
-
-            // Manually setting values for Aedenthorn's BackpackRedux configs.
-            backpackSize = new Vector2(6, 3);
-            backpackWeightMult = 0.75f; // Items stored in backpacks are 25% lighter. Non-recursive.
 
             // The "NewExtendedItemData" event is run whenever a newly created item is extended by the ExtendedItemDataFramework.dll, I'm just catching it and appending my own code at the end of it
             ExtendedItemData.NewExtendedItemData += OnNewExtendedItemData;
 
             harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
+
+        }
+
+        private void CreateConfigValues()
+        {
+            Config.SaveOnConfigSet = true;
+
+            // These configs can be edited by local users.
+            hotKey = Config.Bind(
+                        "Local config", "HotKey", KeyCode.I,
+                        new ConfigDescription("Hotkey to open backpack."));
+
+            // These configs are enforced by the server, but can be edited locally if in single-player.
+            backpackSize = Config.Bind(
+                        "Server-enforceable config", "Backpack Size", new Vector2(6, 3),
+                        new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
+                        null,
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
+
+            weightMultiplier = Config.Bind(
+                        "Server-enforceable config", "Weight Multiplier", 0.5f,
+                        new ConfigDescription("The weight of items stored in the backpack gets multiplied by this value.",
+                        new AcceptableValueRange<float>(0f, 1f), // range between 0f and 1f will make it display as a percentage slider
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 5 }));
+
+            carryBonusRugged = Config.Bind(
+                        "Server-enforceable config", "Rugged Backpack: Carry Bonus", 50,
+                        new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
+                        new AcceptableValueRange<int>(0, 300),
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 4 }));
+
+            speedModRugged = Config.Bind(
+                        "Server-enforceable config", "Rugged Backpack: Speed Modifier", -0.15f,
+                        new ConfigDescription("Wearing the backpack slows you down by this much.",
+                        new AcceptableValueRange<float>(-1f, -0f),
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 3 }));
+
+            carryBonusArctic = Config.Bind(
+                        "Server-enforceable config", "Arctic Backpack: Carry Bonus", 0,
+                        new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
+                        new AcceptableValueRange<int>(0, 300),
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 2 }));
+
+            speedModArctic = Config.Bind(
+                        "Server-enforceable config", "Arctic Backpack: Speed Modifier", -0.15f,
+                        new ConfigDescription("Wearing the backpack slows you down by this much.",
+                        new AcceptableValueRange<float>(-1f, -0f),
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 1 }));
 
         }
 
@@ -128,8 +174,8 @@ namespace JotunnBackpacks
             return new Inventory(
                 backpackInventoryName,
                 null,
-                (int)backpackSize.x,
-                (int)backpackSize.y
+                (int)backpackSize.Value.x,
+                (int)backpackSize.Value.y
                 );
 
         }
@@ -180,7 +226,7 @@ namespace JotunnBackpacks
             }
 
             // Return false if GetEquippedBackpack() returns null.
-            Jotunn.Logger.LogMessage("No backpack equipped. Can't open any.");
+            Log.LogMessage("No backpack equipped. Can't open any.");
             return false;
 
         }
@@ -215,7 +261,7 @@ namespace JotunnBackpacks
             // Otherwise drop the backpack
             else
             {
-                Jotunn.Logger.LogMessage("Clever... But you're still not gonna cause backpackception!");
+                Log.LogMessage("Clever... But you're still not gonna cause backpackception!");
 
                 // Remove the backpack item from the Inventory instance and then drop the backpack item in front of the player.
                 backpackInventory.RemoveItem(item);
@@ -264,10 +310,10 @@ namespace JotunnBackpacks
                 // Iff there are any items inside the backpacksToSave list, loop through and save them all.
                 if (backpacksToSave.Any())
                 {
-                    Jotunn.Logger.LogMessage("Saving backpacks.");
+                    Log.LogMessage("Saving backpacks.");
                     foreach (ItemDrop.ItemData backpack in backpacksToSave)
                     {
-                        Jotunn.Logger.LogMessage($"Saving: {backpack.GetUniqueId()}");
+                        Log.LogMessage($"Saving: {backpack.GetUniqueId()}");
                         backpack.Extended().Save();
                     }
 
@@ -312,7 +358,7 @@ namespace JotunnBackpacks
                         // If the Inventory has been changed at any point, it calls UpdateTotalWeight(), which should ensure that its m_totalWeight is accurate.
                         var inventoryWeight = __instance.Extended().GetComponent<BackpackComponent>().GetInventory().GetTotalWeight();
 
-                        __result += inventoryWeight * backpackWeightMult; // If the BackpackComponent's weight hasn't been assigned yet, its default value is zero anyway.
+                        __result += inventoryWeight * weightMultiplier.Value; // If the BackpackComponent's weight hasn't been assigned yet, its default value is zero anyway.
                     }
                 }
             }
@@ -337,7 +383,7 @@ namespace JotunnBackpacks
                         // If the item is a backpack...
                         if (backpackTypes.Contains(item.m_shared.m_name))
                         {
-                            Jotunn.Logger.LogMessage("You can't put a backpack inside a backpack, silly!");
+                            Log.LogMessage("You can't put a backpack inside a backpack, silly!");
                             EjectBackpack(item, player, __instance);
 
                             // There is only ever one backpack in the backpack inventory, so we don't need to continue the loop once we've chucked it out
@@ -350,7 +396,7 @@ namespace JotunnBackpacks
 
         }
 
-       [HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable))]
+        [HarmonyPatch(typeof(Inventory), nameof(Inventory.IsTeleportable))]
         static class IsTeleportable_Patch
         {
             static void Postfix(Inventory __instance, ref bool __result)
@@ -382,7 +428,7 @@ namespace JotunnBackpacks
 
         }
 
-        
+
         // TODO: This is very dirty... but it's here until I find out how to do it the proper way.
         [HarmonyPatch(typeof(EnvMan), nameof(EnvMan.IsCold))]
         static class IsCold_Patch
@@ -405,7 +451,7 @@ namespace JotunnBackpacks
             }
 
         }
-        
+
 
     }
 }

@@ -26,9 +26,6 @@ This mod introduces two backpack models (thanks to Cinnabunn!) to the game. You 
 
 Most of this project is the result of the hard work of these awesome people!
 
-### Todo
- * Try my darndest to break things before it's ready for official release.
-
 ### Compatibility Notes
  * Compatible with _[Project Auga](https://projectauga.com/)!_
  * _No mod conflicts that I know of yet._

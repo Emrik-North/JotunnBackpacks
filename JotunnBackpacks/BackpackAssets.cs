@@ -1,11 +1,10 @@
 ﻿/* BackpackAssets.cs
  * 
- * From JotunnModExample, including eviesbackpacks made by CinnaBunn (Evie).
+ * Based off of JotunnModExample, including eviesbackpacks made by CinnaBunn (Evie).
  * https://github.com/Valheim-Modding/JotunnModExample/
  * 
  */
 
-using Jotunn.Configs;
 using Jotunn.Entities;
 using Jotunn.Managers;
 using Jotunn.Utils;
@@ -18,13 +17,13 @@ namespace JotunnBackpacks
     public class BackpackAssets
     {
         // Asset and prefab loading
-        private AssetBundle EmbeddedResourceBundle;
-        private GameObject BackpackIronPrefab;
-        private GameObject BackpackSilverPrefab;
-        private CustomStatusEffect ruggedBackpackEffect;
-        private CustomStatusEffect arcticBackpackEffect;
+        private static AssetBundle EmbeddedResourceBundle;
+        private static GameObject BackpackIronPrefab;
+        private static GameObject BackpackSilverPrefab;
+        private static CustomStatusEffect ruggedBackpackEffect;
+        private static CustomStatusEffect arcticBackpackEffect;
 
-        public void LoadAssets()
+        public static void LoadAssets()
         {
             // Load backpack asset bundle from embedded resources
             Jotunn.Logger.LogInfo($"Embedded resources: {string.Join(",", typeof(JotunnBackpacks).Assembly.GetManifestResourceNames())}");
@@ -33,15 +32,15 @@ namespace JotunnBackpacks
             BackpackSilverPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
         }
         
-        public void AddStatusEffects()
+        public static void AddStatusEffects()
         {
             SE_Stats effectsRuggedBackpack = ScriptableObject.CreateInstance<SE_Stats>();
             effectsRuggedBackpack.name = "SE_RuggedBackpack";
             effectsRuggedBackpack.m_name = "$se_ruggedbackpack";
             effectsRuggedBackpack.m_startMessageType = MessageHud.MessageType.TopLeft;
-            effectsRuggedBackpack.m_startMessage = "$se_ruggedbackpackeffects_start"; // Localization
+            effectsRuggedBackpack.m_startMessage = "$se_ruggedbackpackeffects_start";
             effectsRuggedBackpack.m_addMaxCarryWeight = JotunnBackpacks.carryBonusRugged.Value;
-            // effectsRuggedBackpack.m_attributes = StatusEffect.StatusAttribute.ColdResistance; // Doesn't work and I don't know why
+            // effectsRuggedBackpack.m_attributes = StatusEffect.StatusAttribute.ColdResistance; // Doesn't work and I don't know why yet
 
             ruggedBackpackEffect = new CustomStatusEffect(effectsRuggedBackpack, fixReference: false);
             ItemManager.Instance.AddStatusEffect(ruggedBackpackEffect);
@@ -51,7 +50,7 @@ namespace JotunnBackpacks
             effectsArcticBackpack.name = "SE_ArcticBackpack";
             effectsArcticBackpack.m_name = "$se_arcticbackpack";
             effectsArcticBackpack.m_startMessageType = MessageHud.MessageType.TopLeft;
-            effectsArcticBackpack.m_startMessage = "$se_arcticbackpackeffects_start"; // Localization
+            effectsArcticBackpack.m_startMessage = "$se_arcticbackpackeffects_start";
             effectsArcticBackpack.m_addMaxCarryWeight = JotunnBackpacks.carryBonusArctic.Value;
 
             arcticBackpackEffect = new CustomStatusEffect(effectsArcticBackpack, fixReference: false);
@@ -60,7 +59,7 @@ namespace JotunnBackpacks
         }
 
         // Implementation of assets using mocks, adding recipes manually without the config abstraction
-        public void AddMockedItems()
+        public static void AddMockedItems()
         {
             // Iron Backpack
             if (!BackpackIronPrefab) Jotunn.Logger.LogWarning($"Failed to load asset from bundle: {EmbeddedResourceBundle}");

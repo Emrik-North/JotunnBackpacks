@@ -42,17 +42,14 @@ namespace JotunnBackpacks
             return data;
         }
 
-        // This code is run on game start for objects with a BackpackComponent, and it converts the inventory information from string format (ZPackage) to object format (Inventory) so the game can use it.
+        // This code is run on game start for objects with a BackpackComponent, and it converts the inventory info from string format (ZPackage) to object format (Inventory) so the game can use it.
         public override void Deserialize(string data)
         {
             try
             {
                 // When the game closes, it saves data from ItemData objects by storing it as strings in the save file, and then it destroys all instances of objects.
                 // So upon game start, we need to initialise new objects and store the saved data into those.
-                // If you don't reinitialise your Inventory objects on game start, you'll get a NullReferenceError when the game tries to access those inventories.
-
-                // Check if backpackInventory already refers to an Inventory instance, and initialise one for it if not.
-                // I think if you only log out, and don't close the game, all object instances aren't destroyed? If so, we don't want to reinitialise them upon login.
+                // If you don't reinitialise your Inventory objects on game start, you'll get a NullReferenceException when the game tries to access those inventories.
                 if (eidf_inventory is null)
                 {
                     eidf_inventory = JotunnBackpacks.NewInventoryInstance();

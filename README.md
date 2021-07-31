@@ -30,7 +30,7 @@ Most of this project is the result of the hard work of these awesome people!
  * Try my darndest to break things before it's ready for official release.
 
 ### Compatibility Notes
- * Compatible with _[Project Auga](https://projectauga.com/)_!
+ * Compatible with _[Project Auga](https://projectauga.com/)!_
  * _No mod conflicts that I know of yet._
 
 Please let me know if you find any additional bugs, issues or incompatibilities.

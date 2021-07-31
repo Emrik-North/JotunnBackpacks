@@ -1,6 +1,6 @@
 # JötunnBackpacks
 
-This mod introduces two backpack models (thanks to Cinnabunn!) to the game. You can open them with a hotkey (_i_ by default) and store items in them.
+This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You can open them with a hotkey (_i_ by default) and store items in them.
 
 (todo image)
 
@@ -14,18 +14,17 @@ This mod introduces two backpack models (thanks to Cinnabunn!) to the game. You 
 * Nor can you put a backpack inside a backpack in order to get around this limitation!
 
 ### Server
-* Should be installed on the server and on all clients. If the mod is on the server, it will disconnect clients without the mod.
+* Should be installed on both server and on all clients. If the mod is on the server, it will disconnect clients without the mod.
 
-### Credit
- * **Evie/CinnaBunn** for their 'eviesbackpacks' assets inside [JotunnModExample](https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded).
+### Credits
+ * **Evie/CinnaBunn** for their amazing backpack models originally found inside [JotunnModExample](https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded).
  * **Aedenthorn** for their [BackpackRedux](https://www.nexusmods.com/valheim/mods/1333) mod, which I derived and learned a lot from. _Feel free to [donate](https://www.nexusmods.com/valheim/users/18901754) to show appreciation!_ :)
- * **Randy Knapp** for their [Extended Item Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework), without which this project would have been much harder.
+ * **Randy Knapp** for their [Extended Item Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework), without which this project would have been much harder. They also 
  * **[sbtoonz/Zarboz](https://github.com/VMP-Valheim/Back_packs)** for guidance and help with various things like setting ZNetView().m_persistent=true.
  * **The Jotunn Team** for creating [Jotunn: The Valheim Library](https://valheim-modding.github.io/Jotunn/index.html), which is the framework this mod uses.
  * **MarcoPogo** and **Jules** for helping me with some questions I had in the [Jotunn Discord](https://discord.gg/DdUt6g7gyA).
 
 Most of this project is the result of the hard work of these awesome people!
-
 
 ### Compatibility Notes
  * Compatible with _[Project Auga](https://projectauga.com/)!_

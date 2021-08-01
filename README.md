@@ -17,11 +17,13 @@ This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You 
 * Should be installed on both server and on all clients. If the mod is on the server, it will disconnect clients without the mod.
 
 ### Credits
- * **Evie/CinnaBunn** for their amazing backpack models originally found inside [JotunnModExample](https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded).
- * **Aedenthorn** ([support](https://www.nexusmods.com/valheim/users/18901754)) for the core that this mod builds upon. Feel free to show appreciation by supporting. :)
- * **Randy Knapp** ([support](https://www.paypal.com/donate/?hosted_button_id=UFYR7AKYFPXLY)) for their [Extended Item Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework), without which this project would have been much harder. They also helped me [fix](https://github.com/RandyKnapp/ValheimMods/blob/77e98e3cf0cacc43d9812659f12fd5fcb3154d8d/EquipmentAndQuickSlots/InventoryGrid_Patch.cs#L10) a pernicious bug.
- * **[sbtoonz/Zarboz](https://github.com/VMP-Valheim/Back_packs)** for guidance and help with various things like setting ZNetView().m_persistent=true.
- * **The Jotunn Team** for creating [Jotunn: The Valheim Library](https://valheim-modding.github.io/Jotunn/index.html), which is the framework this mod uses.
+Feel free to show appreciation by supporting. :)
+
+ * **CinnaBunn** (_support_) for their amazing art.
+ * **Aedenthorn** ([support](https://www.nexusmods.com/valheim/users/18901754)).
+ * **Randy Knapp** ([support](https://www.paypal.com/donate/?hosted_button_id=UFYR7AKYFPXLY)) for their [Extended Item Data Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework). Also this [fix](https://github.com/RandyKnapp/ValheimMods/blob/77e98e3cf0cacc43d9812659f12fd5fcb3154d8d/EquipmentAndQuickSlots/InventoryGrid_Patch.cs#L10).
+ * **Zarboz** for guidance and [help](https://github.com/VMP-Valheim/Back_packs) with the implementation.
+ * **The Jotunn Team** for creating [Jotunn: The Valheim Library](https://valheim-modding.github.io/Jotunn/index.html).
  * **MarcoPogo** and **Jules** for helping me with some questions I had in the [Jotunn Discord](https://discord.gg/DdUt6g7gyA).
 
 Most of this project is the result of the hard work of these awesome people!
@@ -34,9 +36,9 @@ Please let me know if you find any additional bugs, issues or incompatibilities.
 
 ### How to Install
 0. _(Optional)_ Use a mod manager like [r2modman](https://valheim.thunderstore.io/package/ebkr/r2modman/) or alternatives.
-1. Install [BepInEx for Valheim](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/)
-2. Install [Jotunn](https://valheim.thunderstore.io/package/ValheimModding/Jotunn/)
-3. Install [Extended Item Data Framework](https://valheim.thunderstore.io/package/RandyKnapp/ExtendedItemDataFramework/)
+1. Install [BepInEx for Valheim](https://valheim.thunderstore.io/package/denikson/BepInExPack_Valheim/).
+2. Install [Jotunn](https://valheim.thunderstore.io/package/ValheimModding/Jotunn/).
+3. Install [Extended Item Data Framework](https://valheim.thunderstore.io/package/RandyKnapp/ExtendedItemDataFramework/).
 4. Install this mod.
 
 For manual install, you want to drag the _JotunnBackpacks_ folder into the BepInEx/Plugins folder. The _JotunnBackpacks_ folder should contain _JotunnBackpacks.dll_ and _Translations_.

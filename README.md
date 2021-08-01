@@ -19,7 +19,7 @@ This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You 
 ### Credits
  * **Evie/CinnaBunn** for their amazing backpack models originally found inside [JotunnModExample](https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded).
  * **Aedenthorn** for their [BackpackRedux](https://www.nexusmods.com/valheim/mods/1333) mod, which I derived and learned a lot from. _Feel free to [donate](https://www.nexusmods.com/valheim/users/18901754) to show appreciation!_ :)
- * **Randy Knapp** for their [Extended Item Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework), without which this project would have been much harder. They also 
+ * **Randy Knapp** for their [Extended Item Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework), without which this project would have been much harder. They also helped me [fix](https://github.com/RandyKnapp/ValheimMods/blob/77e98e3cf0cacc43d9812659f12fd5fcb3154d8d/EquipmentAndQuickSlots/InventoryGrid_Patch.cs#L10) a pernicious bug.
  * **[sbtoonz/Zarboz](https://github.com/VMP-Valheim/Back_packs)** for guidance and help with various things like setting ZNetView().m_persistent=true.
  * **The Jotunn Team** for creating [Jotunn: The Valheim Library](https://valheim-modding.github.io/Jotunn/index.html), which is the framework this mod uses.
  * **MarcoPogo** and **Jules** for helping me with some questions I had in the [Jotunn Discord](https://discord.gg/DdUt6g7gyA).

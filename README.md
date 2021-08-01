@@ -8,13 +8,13 @@ This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You 
 * Each backpack has their own separate inventory, and their inventories are preserved even when you toss your backpack to a friend.
 * Storing items in the backpack reduces their weight by 50% by default (configurable).
 * You can also configure how much they modify your carry capacity and movement speed.
-* All configs (except hotkey) are server-enforceable.
 * [Localization support](https://valheim-modding.github.io/Jotunn/tutorials/localization.html#example-json-file). Please let me know if you want to add a translation for your language!
 * You cannot teleport with unteleportable items in the backpack.
 * Nor can you put a backpack inside a backpack in order to get around this limitation!
 
 ### Server
 * Should be installed on both server and on all clients. If the mod is on the server, it will disconnect clients without the mod.
+* All configs (except hotkey) are server-enforceable.
 
 ### Credits
 Feel free to show appreciation by supporting. :)

@@ -1,8 +1,6 @@
-# JötunnBackpacks
+![#JötunnBackpacks](https://live.staticflickr.com/65535/51349781473_97b6d4ae9d_h.jpg)
 
 This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You can open them with a hotkey (_i_ by default) and store items in them. It's an expansion on Aedenthorn's [BackpackRedux](https://www.nexusmods.com/valheim/mods/1333) mod, and it relies heavily on their precursor work.
-
-(todo image)
 
 ### Features
 * Each backpack has their own separate inventory, and their inventories are preserved even when you toss your backpack to a friend.

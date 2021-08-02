@@ -47,7 +47,7 @@ namespace JotunnBackpacks
     {
         public const string PluginGUID = "JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
-        public const string PluginVersion = "0.3.0";
+        public const string PluginVersion = "1.0.0";
         public const string eidfGUID = "randyknapp.mods.extendeditemdataframework";
         public const string eaqsGUID = "randyknapp.mods.equipmentandquickslots";
 

@@ -38,44 +38,23 @@ namespace JotunnBackpacks
 
         }
 
-        [HarmonyPatch(typeof(Game), nameof(Game.SavePlayerProfile))]
-        static class SavePlayerProfile_Patch
+        // Saving the backpack every time it's changed is marginally more expensive than the alternative, but it's safer and a lot tidier.
+        // The alternative would be to patch every method involved in moving the backpack out of the inventory, which includes dropitem, 4 overloaded moveinventorytothis methods, and more.
+        // When you drop an item, you remove the original instance and drop a cloned instance. A solution to this is to serialize the Inventory instance into the ItemData m_crafterName before it's moved.
+        [HarmonyPatch(typeof(Inventory), nameof(Inventory.Changed))]
+        static class Inventory_Changed_Patch
         {
-            static void Prefix()
+            static void Postfix(Inventory __instance)
             {
-                // Iff there are any items inside the backpacksToSave list, loop through and save them all.
-                if (JotunnBackpacks.backpacksToSave.Any())
+                // If the inventory changed belongs to a backpack...
+                if (__instance.m_name == JotunnBackpacks.backpackInventoryName)
                 {
-                    Log.LogMessage("Saving backpacks.");
-                    foreach (ItemDrop.ItemData backpack in JotunnBackpacks.backpacksToSave)
-                    {
-                        Log.LogMessage($"Saving: {backpack.GetUniqueId()}");
-                        backpack.Extended().Save();
-                    }
-
-                    // Since we have saved all the backpacks we needed to save, we can clear the list.
-                    JotunnBackpacks.backpacksToSave.Clear();
+                    // Save the backpack, but only if it's equipped. (This is a workaround to ExtendedItemFrameWork_AddItemFromLoad_Patch)
+                    var backpack = JotunnBackpacks.GetEquippedBackpack();
+                    if (backpack != null) backpack.Extended().Save();
                 }
             }
 
-        }
-
-        // When you drop an item, you remove the original instance and drop a cloned instance.
-        // This is a problem if the backpack to be dropped is in the backpacksToSave list, since the clone won't automatically get added to it.
-        // So we patch the DropItem method to add the cloned backpack instance to the list if the original was in the list.
-        [HarmonyPatch(typeof(ItemDrop), nameof(ItemDrop.DropItem))]
-        static class ItemDrop_DropItem_Patch
-        {
-            static void Postfix(ItemDrop.ItemData item, ItemDrop __result)
-            {
-                if (JotunnBackpacks.backpacksToSave.Contains(item))
-                {
-                    // If the instance is in the backpacksToSave list, remove the original and add the cloned instance to the backpacksToSave list.
-                    JotunnBackpacks.backpacksToSave.Remove(item);
-                    JotunnBackpacks.backpacksToSave.Add(__result.m_itemData);
-                    __result.m_itemData.Extended().Save();
-                }
-            }
         }
 
         [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetWeight))]

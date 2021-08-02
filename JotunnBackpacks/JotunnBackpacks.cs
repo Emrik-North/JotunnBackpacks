@@ -7,7 +7,7 @@
  * sbtoonz/Zarboz for guidance and help with various things like setting ZNetView().m_persistent=true: https://github.com/VMP-Valheim/Back_packs
  * The Jotunn Team for creating Jotunn: The Valheim Library, which is the framework this mod uses: https://valheim-modding.github.io/Jotunn/index.html
  * 
- * Most of this project is the result of the hard work of these people.
+ * Most of this project is the result of the hard work of these awesome people!
  * 
  * *
  * 
@@ -27,8 +27,8 @@ using ExtendedItemDataFramework;
 using Log = Jotunn.Logger;
 
 /* TODOS
- * • Test and try to break the backpacks somehow while on a server!
- * • Hotkey to drop backpack to be able to run faster out of danger, like in Outward! Also make backpacks never despawn when dropped.
+ * • Hotkey to drop backpack to be able to run faster out of danger, like in Outward!
+ * • Also make backpacks never despawn when dropped.
  * 
  */
 
@@ -37,7 +37,7 @@ namespace JotunnBackpacks
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(Jotunn.Main.ModGuid)]
     [BepInDependency(eidfGUID)]
-    [BepInDependency(eaqsGUID, BepInDependency.DependencyFlags.SoftDependency)] // This soft dependency is just here to check if it's installed on the client, see the GuiBar_Awake_Patch
+    [BepInDependency(eaqsGUID, BepInDependency.DependencyFlags.SoftDependency)] // This soft dependency is just here to check if it's installed on the client, see the GuiBar_Awake_Patch.
 
     // This attribute is set such that both server and clients need to have this mod, and the same version of this mod, otherwise the client cannot connect.
     // This is to prevent cases such as when a client logs on, creates a backpack, puts it in a container, logs off, and then another client without the mod opens the container, and the backpack gets destroyed.
@@ -47,7 +47,7 @@ namespace JotunnBackpacks
     {
         public const string PluginGUID = "JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
-        public const string PluginVersion = "0.2.0";
+        public const string PluginVersion = "0.3.0";
         public const string eidfGUID = "randyknapp.mods.extendeditemdataframework";
         public const string eaqsGUID = "randyknapp.mods.equipmentandquickslots";
 
@@ -64,7 +64,6 @@ namespace JotunnBackpacks
         public static Container backpackContainer; // Only need a single Container because only the contents (Inventory) vary between backpacks, not sizes.
         public static List<string> backpackTypes = new List<string>(); // All the types of backpacks (currently only $item_cape_ironbackpack and $item_cape_silverbackpack from CinnaBunn)
         private static ItemDrop.ItemData backpackEquipped; // Backpack object currently equipped
-        public static List<ItemDrop.ItemData> backpacksToSave = new List<ItemDrop.ItemData>(); // All the backpack objects modified by player since last time they were saved
         public static string backpackInventoryName = "$ui_backpack_inventoryname";
         public static bool opening = false;
 
@@ -166,7 +165,9 @@ namespace JotunnBackpacks
         public static ItemDrop.ItemData GetEquippedBackpack()
         {
             // Get a list of all equipped items.
-            List<ItemDrop.ItemData> equippedItems = Player.m_localPlayer.GetInventory().GetEquipedtems();
+            List<ItemDrop.ItemData> equippedItems = Player.m_localPlayer?.GetInventory()?.GetEquipedtems();
+
+            if (equippedItems is null) return null;
 
             // Go through all the equipped items, match them for any of the names in backpackTypes.
             // If a match is found, return the backpack ItemData object.
@@ -224,13 +225,6 @@ namespace JotunnBackpacks
 
             backpackContainer.m_inventory = backpackEquipped.Extended().GetComponent<BackpackComponent>().GetInventory();
             InventoryGui.instance.Show(backpackContainer);
-
-            // If backpacksToSave list doesn't already have this backpack in it,
-            // add it to the list so that the code knows to save the contents of this backpack when it saves the player profile.
-            if (!backpacksToSave.Contains(backpackEquipped))
-            {
-                backpacksToSave.Add(backpackEquipped);
-            }
 
         }
 

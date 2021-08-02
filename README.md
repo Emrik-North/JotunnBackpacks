@@ -3,7 +3,7 @@
 This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You can open them with a hotkey (_i_ by default) and store items in them. It's an expansion on Aedenthorn's [BackpackRedux](https://www.nexusmods.com/valheim/mods/1333) mod, and it relies heavily on their precursor work.
 
 ### Features
-* Each backpack has their own separate inventory, and their inventories are preserved even when you toss your backpack to a friend.
+* Each backpack has its own separate inventory, and their inventories are preserved even when you toss your backpack to a friend.
 * Storing items in the backpack reduces their weight by 50% by default (configurable).
 * You can also configure how much they modify your carry capacity and movement speed.
 * [Localization support](https://valheim-modding.github.io/Jotunn/tutorials/localization.html#example-json-file). Please let me know if you want to add a translation for your language!

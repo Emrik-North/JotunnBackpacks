@@ -1,6 +1,6 @@
 ![#JötunnBackpacks](https://live.staticflickr.com/65535/51349781473_97b6d4ae9d_h.jpg)
 
-This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You can open them with a hotkey (_i_ by default) and store items in them. It's an expansion on Aedenthorn's [BackpackRedux](https://www.nexusmods.com/valheim/mods/1333) mod, and it relies heavily on their precursor work.
+This mod introduces two backpack models (thanks to Cinnabunn!) to the game. You can open them with a hotkey (_i_ by default) and store items in them. It's an expansion on Aedenthorn's [BackpackRedux](https://www.nexusmods.com/valheim/mods/1333) mod, and it relies heavily on their precursor work.
 
 ### Features
 * Each backpack has its own separate inventory, and their inventories are preserved even when you toss your backpack to a friend.
@@ -17,7 +17,7 @@ This mod introduces two backpack models (thanks to CinnaBunn!) to the game. You 
 ### Credits
 Feel free to show appreciation by supporting. :)
 
- * **CinnaBunn** (_support_) for their amazing art.
+ * **Cinnabunn** (_support_) for their amazing art.
  * **Aedenthorn** ([support](https://www.nexusmods.com/valheim/users/18901754)).
  * **Randy Knapp** ([support](https://www.paypal.com/donate/?hosted_button_id=UFYR7AKYFPXLY)) for their [Extended Item Data Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework). Also this [fix](https://github.com/RandyKnapp/ValheimMods/blob/77e98e3cf0cacc43d9812659f12fd5fcb3154d8d/EquipmentAndQuickSlots/InventoryGrid_Patch.cs#L10).
  * **Zarboz** for guidance and [help](https://github.com/VMP-Valheim/Back_packs) with the implementation.
@@ -42,6 +42,6 @@ Please let me know if you find any additional bugs, issues or incompatibilities.
 For manual install, you want to drag the _JotunnBackpacks_ folder into the BepInEx/Plugins folder. The _JotunnBackpacks_ folder should contain _JotunnBackpacks.dll_ and _Translations_.
 
 ### Links
-Thunderstore: (link)  
-Nexusmods: (link)  
-GitHub: https://github.com/Emrik-North/JotunnBackpacks  
+[Thunderstore](https://valheim.thunderstore.io/package/EmrikNorth_and_Aedenthorn/JotunnBackpacks/) 
+[Nexusmods](https://www.nexusmods.com/valheim/mods/1416)  
+[GitHub](https://github.com/Emrik-North/JotunnBackpacks)  

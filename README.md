@@ -42,6 +42,6 @@ Please let me know if you find any additional bugs, issues or incompatibilities.
 For manual install, you want to drag the _JotunnBackpacks_ folder into the BepInEx/Plugins folder. The _JotunnBackpacks_ folder should contain _JotunnBackpacks.dll_ and _Translations_.
 
 ### Links
-[Thunderstore](https://valheim.thunderstore.io/package/EmrikNorth_and_Aedenthorn/JotunnBackpacks/) 
+[Thunderstore](https://valheim.thunderstore.io/package/EmrikNorth_and_Aedenthorn/JotunnBackpacks/)  
 [Nexusmods](https://www.nexusmods.com/valheim/mods/1416)  
 [GitHub](https://github.com/Emrik-North/JotunnBackpacks)  

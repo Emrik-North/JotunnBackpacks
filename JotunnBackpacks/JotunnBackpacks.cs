@@ -31,6 +31,8 @@ using BepInEx.Logging;
  * • Hotkey to drop backpack to be able to run faster out of danger, like in Outward!
  * • Also make backpacks never despawn when dropped.
  * 
+ * • Call UpdateTotalWeight() when you change backpack inventory.
+ * • Check if Epic Loot is installed, and disable Weightless as a possible enchant for backpacks
  */
 
 namespace JotunnBackpacks
@@ -48,12 +50,14 @@ namespace JotunnBackpacks
     {
         public const string PluginGUID = "JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "2.0.0";
         public const string eidfGUID = "randyknapp.mods.extendeditemdataframework";
         public const string eaqsGUID = "randyknapp.mods.equipmentandquickslots";
 
         // Config entries
-        public static ConfigEntry<KeyCode> hotKey;
+        public static ConfigEntry<KeyCode> hotKey_open;
+        public static ConfigEntry<KeyCode> hotKey_drop;
+        public static ConfigEntry<bool> outwardMode; // TODO: This should enable and disable outward mode. Make it a button in config menu.
         public static ConfigEntry<Vector2> ironbackpackSize;
         public static ConfigEntry<Vector2> arcticbackpackSize;
         public static ConfigEntry<float> weightMultiplier;
@@ -95,9 +99,23 @@ namespace JotunnBackpacks
             Config.SaveOnConfigSet = true;
 
             // These configs can be edited by local users.
-            hotKey = Config.Bind(
-                        "Local config", "HotKey", KeyCode.I,
-                        new ConfigDescription("Hotkey to open backpack."));
+            hotKey_open = Config.Bind(
+                        "Local config", "Open Backpack", KeyCode.I,
+                        new ConfigDescription("Hotkey to open backpack.",
+                        null,
+                        new ConfigurationManagerAttributes { Order = 3 }));
+
+            hotKey_drop = Config.Bind(
+                        "Local config", "Quickdrop Backpack", KeyCode.Y, // TODO: Set this to keypad minus
+                        new ConfigDescription("Hotkey to quickly drop backpack while on the run.",
+                        null,
+                        new ConfigurationManagerAttributes { Order = 2 }));
+
+            outwardMode = Config.Bind(
+                        "Local config", "Outward Mode", true,
+                        new ConfigDescription("You can use a hotkey to quickly drop your equipped backpack in order to run away from danger.",
+                        null,
+                        new ConfigurationManagerAttributes { Order = 1 }));
 
             // These configs are enforced by the server, but can be edited locally if in single-player.
             ironbackpackSize = Config.Bind(
@@ -118,7 +136,7 @@ namespace JotunnBackpacks
                         new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 5 }));
 
             carryBonusRugged = Config.Bind(
-                        "Server-enforceable config", "Rugged Backpack: Carry Bonus", 50,
+                        "Server-enforceable config", "Rugged Backpack: Carry Bonus", 0,
                         new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
                         new AcceptableValueRange<int>(0, 300),
                         new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 4 }));
@@ -217,10 +235,15 @@ namespace JotunnBackpacks
             if (!Player.m_localPlayer || !ZNetScene.instance)
                 return;
 
-            if (!AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey.Value) && CanOpenBackpack())
+            if (!AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey_open.Value) && CanOpenBackpack())
             {
                 opening = true;
                 OpenBackpack();
+            }
+
+            if (outwardMode.Value && !AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey_drop.Value) && CanOpenBackpack())
+            {
+                QuickDropBackpack();
             }
 
         }
@@ -281,5 +304,82 @@ namespace JotunnBackpacks
 
         }
 
+        private static void QuickDropBackpack()
+        {
+            //TODO:
+            // Look at these methods from the game:
+            // • Game.instance.GetPlayerProfile().SetDeathPoint(base.transform.position)
+            // • Player.CreateTombStone()
+            // • this.m_nview.InvokeRPC(ZNetView.Everybody, "OnDeath", Array.Empty<object>()); ????
+
+            Log.LogMessage("Quickdropping backpack.");
+
+            var player = Player.m_localPlayer;
+            var backpack = GetEquippedBackpack();
+
+            var itemDrop = ItemDrop.DropItem(backpack, 1, player.transform.position + player.transform.forward + player.transform.up, player.transform.rotation);
+
+            //var component = itemDrop.gameObject.AddComponent<EffectArea>();
+            //component.m_type = EffectArea.Type.PlayerBase;
+
+            //Log.LogMessage($"backpack base?: {component.GetType()}");
+
+            // itemDrop.m_nview.m_type = ZDO.ObjectType.Solid;
+
+            //TODO: Make questitem?! UPDATE: NOT WORK
+            //itemDrop.m_itemData.m_shared.m_questItem = true;
+            //Log.LogMessage($"is backpack quest item: {itemDrop.m_itemData.m_shared.m_questItem}"); // questitem does not work. Backpack still despawns.
+            //CreateBackpackStone(player, backpack);
+
+            // TODO: Check how workbenches protect against despawn
+
+            // Unequip and remove backpack from player's back
+            player.RemoveFromEquipQueue(backpack);
+            player.UnequipItem(backpack, false);
+            player.m_inventory.RemoveItem(backpack);
+
+        }
+
+        /*
+        private static void CreateBackpackStone(Player player, ItemDrop.ItemData backpack)
+        {
+            var backpackGo = backpack.m_dropPrefab.gameObject;
+
+            var fijfij = Player.m_localPlayer.m_inventory;
+
+            //backpackGo.layer = 10; // Does this convert the go to a piece?! I probably have to create an instance first.
+            //backpackGo.GetComponent<ZNetView>().m_type = ZDO.ObjectType.Solid;
+
+            //var rb = backpackGo.GetComponent<Rigidbody>();
+            //rb.mass = 1;
+            //rb.useGravity = true;
+            //rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            //rb.angularDrag = 0.05f;
+
+            //var ts = backpackGo.AddComponent<TombStone>();
+            //ts.m_text = "Backpack";
+
+            //var fl = backpackGo.AddComponent<Floating>();
+            //fl = Player.m_localPlayer.m_tombstone.GetComponent<Floating>();
+
+            var stoneGo = Instantiate(backpackGo, player.GetCenterPoint(), player.transform.rotation);
+
+            
+            var itemData = stoneGo.GetComponent<ItemDrop.ItemData>();
+
+            //PlayerProfile playerProfile = Game.instance.GetPlayerProfile();
+            //TombStone backpackTombStone = stoneGo.GetComponent<TombStone>();
+
+            
+
+            //Log.LogMessage($"backpackTombStone: {backpackTombStone == null}"); // true
+
+            //backpackTombStone.Setup(playerProfile.GetName(), playerProfile.GetPlayerID()); // NRE
+        }
+        */
+
+
     }
+
+
 }

@@ -25,6 +25,7 @@ using UnityEngine;
 using HarmonyLib;
 using ExtendedItemDataFramework;
 using Log = Jotunn.Logger;
+using BepInEx.Logging;
 
 /* TODOS
  * • Hotkey to drop backpack to be able to run faster out of danger, like in Outward!
@@ -57,7 +58,8 @@ namespace JotunnBackpacks
         public static ConfigEntry<KeyCode> hotKey_open;
         public static ConfigEntry<KeyCode> hotKey_drop;
         public static ConfigEntry<bool> outwardMode; // TODO: This should enable and disable outward mode. Make it a button in config menu.
-        public static ConfigEntry<Vector2> backpackSize;
+        public static ConfigEntry<Vector2> ironbackpackSize;
+        public static ConfigEntry<Vector2> arcticbackpackSize;
         public static ConfigEntry<float> weightMultiplier;
         public static ConfigEntry<int> carryBonusRugged;
         public static ConfigEntry<int> carryBonusArctic;
@@ -71,9 +73,12 @@ namespace JotunnBackpacks
         public static string backpackInventoryName = "$ui_backpack_inventoryname";
         public static bool opening = false;
 
+        private static ManualLogSource _logger;
+
         // Awake() is run when the game loads up.
         private void Awake()
         {
+            _logger = base.Logger;
             CreateConfigValues();
             BackpackAssets.LoadAssets();
             BackpackAssets.AddStatusEffects();
@@ -113,8 +118,13 @@ namespace JotunnBackpacks
                         new ConfigurationManagerAttributes { Order = 1 }));
 
             // These configs are enforced by the server, but can be edited locally if in single-player.
-            backpackSize = Config.Bind(
-                        "Server-enforceable config", "Backpack Size", new Vector2(6, 3),
+            ironbackpackSize = Config.Bind(
+                        "Server-enforceable config", "Rugged Backpack Size", new Vector2(6, 2),
+                        new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
+                        null,
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
+            arcticbackpackSize = Config.Bind(
+                        "Server-enforceable config", "Arctic Backpack Size", new Vector2(6, 3),
                         new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
                         null,
                         new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
@@ -157,8 +167,24 @@ namespace JotunnBackpacks
             // I check whether the item created is of a type contained in backpackTypes
             if (backpackTypes.Contains(itemData.m_shared.m_name))
             {
+                _logger.LogWarning($"{itemData.m_shared.m_name}");
                 // Create an instance of an Inventory class
-                Inventory inventoryInstance = NewInventoryInstance();
+
+                Inventory inventoryInstance = new Inventory(
+                    backpackInventoryName,
+                    null,
+                    (int)ironbackpackSize.Value.x,
+                    (int)ironbackpackSize.Value.y
+                    );
+                if (itemData.m_shared.m_name.Equals("$item_cape_silverbackpack"))
+                {
+                    inventoryInstance = new Inventory(
+                    backpackInventoryName,
+                    null,
+                    (int)arcticbackpackSize.Value.x,
+                    (int)arcticbackpackSize.Value.y
+                    );
+                }
 
                 // Add an empty BackpackComponent to the backpack item
                 var component = itemData.AddComponent<BackpackComponent>();
@@ -166,6 +192,7 @@ namespace JotunnBackpacks
                 // Assign the Inventory instance to the backpack item's BackpackComponent
                 component.SetInventory(inventoryInstance);
             }
+            
 
         }
 
@@ -174,8 +201,8 @@ namespace JotunnBackpacks
             return new Inventory(
                 backpackInventoryName,
                 null,
-                (int)backpackSize.Value.x,
-                (int)backpackSize.Value.y
+                (int)ironbackpackSize.Value.x,
+                (int)ironbackpackSize.Value.y
                 );
 
         }

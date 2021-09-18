@@ -1,6 +1,5 @@
 ﻿using BepInEx.Bootstrap;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using HarmonyLib;
 using ExtendedItemDataFramework;
@@ -16,7 +15,7 @@ namespace JotunnBackpacks
         {
             static void Postfix(Animator ___m_animator, ref Container ___m_currentContainer)
             {
-                if (!AedenthornUtils.CheckKeyDown(JotunnBackpacks.hotKey.Value) || !Player.m_localPlayer || !___m_animator.GetBool("visible"))
+                if (!AedenthornUtils.CheckKeyDown(JotunnBackpacks.hotKey_open.Value) || !Player.m_localPlayer || !___m_animator.GetBool("visible"))
                     return;
 
                 if (JotunnBackpacks.opening)
@@ -49,7 +48,7 @@ namespace JotunnBackpacks
                 // If the inventory changed belongs to a backpack...
                 if (__instance.m_name == JotunnBackpacks.backpackInventoryName)
                 {
-                    // Save the backpack, but only if it's equipped. (This is a workaround to ExtendedItemFrameWork_AddItemFromLoad_Patch)
+                    // Save the backpack, but only if it's equipped. (This is a workaround to ExtendedItemDataFrameWork_AddItemFromLoad_Patch)
                     var backpack = JotunnBackpacks.GetEquippedBackpack();
                     if (backpack != null) backpack.Extended().Save();
                 }

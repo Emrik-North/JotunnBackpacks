@@ -20,6 +20,8 @@ namespace JotunnBackpacks
         private static AssetBundle EmbeddedResourceBundle;
         private static GameObject BackpackIronPrefab;
         private static GameObject BackpackSilverPrefab;
+        //private static GameObject BackpackIronQuickdropPrefab; // TODO
+        //private static GameObject BackpackSilverQuickdropPrefab;
         private static CustomStatusEffect ruggedBackpackEffect;
         private static CustomStatusEffect arcticBackpackEffect;
 
@@ -30,6 +32,8 @@ namespace JotunnBackpacks
             EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("eviesbackpacks", typeof(JotunnBackpacks).Assembly);
             BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab");
             BackpackSilverPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
+            //BackpackIronQuickdropPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab"); // TODO
+            //BackpackSilverQuickdropPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
         }
         
         public static void AddStatusEffects()
@@ -69,6 +73,12 @@ namespace JotunnBackpacks
                 CustomItem CI = new CustomItem(BackpackIronPrefab, true);
                 ItemManager.Instance.AddItem(CI);
 
+                // TODO: Prevent item despawning by making it a "player base" object
+                //var component = CI.ItemDrop.gameObject.AddComponent<EffectArea>();
+                //component.m_type = EffectArea.Type.PlayerBase;
+                //component.enabled = true;
+
+
                 // Update the backpack's stats from configs
                 var itemData = CI.ItemDrop.m_itemData;
                 itemData.m_shared.m_maxDurability = 1000f;
@@ -87,7 +97,7 @@ namespace JotunnBackpacks
                 {
                     MockRequirement.Create("LeatherScraps", 8),
                     MockRequirement.Create("DeerHide", 2),
-                    MockRequirement.Create("Iron", 10),
+                    MockRequirement.Create("Bronze", 2),
                 };
                 recipe.m_resources = ingredients.ToArray();
                 CustomRecipe CR = new CustomRecipe(recipe, true, true);
@@ -122,8 +132,8 @@ namespace JotunnBackpacks
                 var ingredients = new List<Piece.Requirement>
                 {
                     MockRequirement.Create("LeatherScraps", 8),
-                    MockRequirement.Create("DeerHide", 2),
-                    MockRequirement.Create("Silver", 10),
+                    MockRequirement.Create("WolfPelt", 2),
+                    MockRequirement.Create("Silver", 2),
                 };
                 recipe.m_resources = ingredients.ToArray();
                 CustomRecipe CR = new CustomRecipe(recipe, true, true);
@@ -132,6 +142,23 @@ namespace JotunnBackpacks
                 //Enable BoneReorder
                 BoneReorder.ApplyOnEquipmentChanged();
             }
+
+
+            // TODO
+            // Iron Backpack Piece (for quickdrop)
+            /*
+            if (!BackpackIronPrefab) Jotunn.Logger.LogWarning($"Failed to load asset from bundle: {EmbeddedResourceBundle}");
+            else
+            {
+                // Create and add a custom item
+                CustomItem CI = new CustomItem(BackpackIronQuickdropPrefab, true);
+                ItemManager.Instance.AddItem(CI);
+
+                // TODO: Need to add extended inventory component to it
+
+
+            }
+            */
             EmbeddedResourceBundle.Unload(false);
         }
     }

@@ -37,12 +37,24 @@ namespace JotunnBackpacks
 
         }
 
-        // Saving the backpack every time it's changed is marginally more expensive than the alternative, but it's safer and a lot tidier.
-        // The alternative would be to patch every method involved in moving the backpack out of the inventory, which includes dropitem, 4 overloaded moveinventorytothis methods, and more.
-        // When you drop an item, you remove the original instance and drop a cloned instance. A solution to this is to serialize the Inventory instance into the ItemData m_crafterName before it's moved.
+
         [HarmonyPatch(typeof(Inventory), nameof(Inventory.Changed))]
         static class Inventory_Changed_Patch
         {
+            // Whenever the backpack inventory is changed, make sure the player inventory updates its total weight
+            static void Prefix(Inventory __instance)
+            {
+                // If the inventory changed belongs to a backpack...
+                if (__instance.m_name == JotunnBackpacks.backpackInventoryName)
+                {
+                    // Update the Player inventory weight
+                    Player.m_localPlayer.m_inventory.Changed();
+                }
+            }
+
+            // Saving the backpack every time it's changed is marginally more expensive than the alternative, but it's safer and a lot tidier.
+            // The alternative would be to patch every method involved in moving the backpack out of the inventory, which includes dropitem, 4 overloaded moveinventorytothis methods, and more.
+            // When you drop an item, you remove the original instance and drop a cloned instance. A solution to this is to serialize the Inventory instance into the ItemData m_crafterName before it's moved.
             static void Postfix(Inventory __instance)
             {
                 // If the inventory changed belongs to a backpack...

@@ -1,16 +1,5 @@
 ﻿/* JotunnBackpacks.cs
  * 
- * CREDIT:
- * Evie/CinnaBunn for their 'eviesbackpacks' assets inside JotunnModExample: https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded
- * Aedenthorn for their BackpackRedux mod, which I derived and learned a lot from: https://github.com/aedenthorn/ValheimMods/blob/master/BackpackRedux/
- * Randy Knapp for their Extended Item Framework, without which this project would have been much harder: https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework
- * sbtoonz/Zarboz for guidance and help with various things like setting ZNetView().m_persistent=true: https://github.com/VMP-Valheim/Back_packs
- * The Jotunn Team for creating Jotunn: The Valheim Library, which is the framework this mod uses: https://valheim-modding.github.io/Jotunn/index.html
- * 
- * Most of this project is the result of the hard work of these awesome people!
- * 
- * *
- * 
  * I usually comment my code heavily. My comment philosophy is to imagine trying to help previous less informed versions of myself learn exactly what's going on in the code.
  * And when I *still* don't understand what's going on in the code even though it works, I'll try to let readers know that so they don't accidentally learn bad practices from me.
  * 
@@ -28,11 +17,11 @@ using Log = Jotunn.Logger;
 using BepInEx.Logging;
 
 /* TODOS
- * • Hotkey to drop backpack to be able to run faster out of danger, like in Outward!
- * • Also make backpacks never despawn when dropped.
- * 
+ * • Make backpacks never despawn when quickdropped.
  * • Call UpdateTotalWeight() when you change backpack inventory.
- * • Check if Epic Loot is installed, and disable Weightless as a possible enchant for backpacks
+ * • Check if Epic Loot is installed, and disable Weightless as a possible enchant for backpacks.
+ * • Make it so you can configure whether the backpacks protect against cold/freezing.
+ * • Bug report about missing items
  */
 
 namespace JotunnBackpacks
@@ -58,8 +47,8 @@ namespace JotunnBackpacks
         public static ConfigEntry<KeyCode> hotKey_open;
         public static ConfigEntry<KeyCode> hotKey_drop;
         public static ConfigEntry<bool> outwardMode; // TODO: This should enable and disable outward mode. Make it a button in config menu.
-        public static ConfigEntry<Vector2> ironbackpackSize;
-        public static ConfigEntry<Vector2> arcticbackpackSize;
+        public static ConfigEntry<Vector2> ruggedBackpackSize;
+        public static ConfigEntry<Vector2> arcticBackpackSize;
         public static ConfigEntry<float> weightMultiplier;
         public static ConfigEntry<int> carryBonusRugged;
         public static ConfigEntry<int> carryBonusArctic;
@@ -106,24 +95,24 @@ namespace JotunnBackpacks
                         new ConfigurationManagerAttributes { Order = 3 }));
 
             hotKey_drop = Config.Bind(
-                        "Local config", "Quickdrop Backpack", KeyCode.Y, // TODO: Set this to keypad minus
+                        "Local config", "Quickdrop Backpack", KeyCode.Y,
                         new ConfigDescription("Hotkey to quickly drop backpack while on the run.",
                         null,
                         new ConfigurationManagerAttributes { Order = 2 }));
 
             outwardMode = Config.Bind(
-                        "Local config", "Outward Mode", true,
-                        new ConfigDescription("You can use a hotkey to quickly drop your equipped backpack in order to run away from danger.",
+                        "Local config", "Outward Mode", false,
+                        new ConfigDescription("You can use a hotkey to quickly drop your equipped backpack in order to run faster away from danger.",
                         null,
                         new ConfigurationManagerAttributes { Order = 1 }));
 
             // These configs are enforced by the server, but can be edited locally if in single-player.
-            ironbackpackSize = Config.Bind(
-                        "Server-enforceable config", "Rugged Backpack Size", new Vector2(6, 2),
+            ruggedBackpackSize = Config.Bind(
+                        "Server-enforceable config", "Rugged Backpack Size", new Vector2(6, 3),
                         new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
                         null,
                         new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
-            arcticbackpackSize = Config.Bind(
+            arcticBackpackSize = Config.Bind(
                         "Server-enforceable config", "Arctic Backpack Size", new Vector2(6, 3),
                         new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
                         null,
@@ -173,16 +162,16 @@ namespace JotunnBackpacks
                 Inventory inventoryInstance = new Inventory(
                     backpackInventoryName,
                     null,
-                    (int)ironbackpackSize.Value.x,
-                    (int)ironbackpackSize.Value.y
+                    (int)ruggedBackpackSize.Value.x,
+                    (int)ruggedBackpackSize.Value.y
                     );
                 if (itemData.m_shared.m_name.Equals("$item_cape_silverbackpack"))
                 {
                     inventoryInstance = new Inventory(
                     backpackInventoryName,
                     null,
-                    (int)arcticbackpackSize.Value.x,
-                    (int)arcticbackpackSize.Value.y
+                    (int)arcticBackpackSize.Value.x,
+                    (int)arcticBackpackSize.Value.y
                     );
                 }
 
@@ -193,7 +182,6 @@ namespace JotunnBackpacks
                 component.SetInventory(inventoryInstance);
             }
             
-
         }
 
         public static Inventory NewInventoryInstance()
@@ -201,8 +189,8 @@ namespace JotunnBackpacks
             return new Inventory(
                 backpackInventoryName,
                 null,
-                (int)ironbackpackSize.Value.x,
-                (int)ironbackpackSize.Value.y
+                (int)ruggedBackpackSize.Value.x,
+                (int)ruggedBackpackSize.Value.y
                 );
 
         }
@@ -306,19 +294,23 @@ namespace JotunnBackpacks
 
         private static void QuickDropBackpack()
         {
-            //TODO:
-            // Look at these methods from the game:
-            // • Game.instance.GetPlayerProfile().SetDeathPoint(base.transform.position)
-            // • Player.CreateTombStone()
-            // • this.m_nview.InvokeRPC(ZNetView.Everybody, "OnDeath", Array.Empty<object>()); ????
-
             Log.LogMessage("Quickdropping backpack.");
 
             var player = Player.m_localPlayer;
             var backpack = GetEquippedBackpack();
 
+            // Unequip and remove backpack from player's back
+            // We need to unequip the item BEFORE we drop it, otherwise when we pick it up again the game thinks
+            // we had it equipped all along and fails to update player model, resulting in invisible backpack.
+            player.RemoveFromEquipQueue(backpack);
+            player.UnequipItem(backpack, true);
+            player.m_inventory.RemoveItem(backpack);
+
+            // This drops a copy of the backpack itemDrop.itemData
             var itemDrop = ItemDrop.DropItem(backpack, 1, player.transform.position + player.transform.forward + player.transform.up, player.transform.rotation);
 
+
+            // The following is just notes on various potential ways of making the backpack non-despawnable after quickdropping it
             //var component = itemDrop.gameObject.AddComponent<EffectArea>();
             //component.m_type = EffectArea.Type.PlayerBase;
 
@@ -332,11 +324,6 @@ namespace JotunnBackpacks
             //CreateBackpackStone(player, backpack);
 
             // TODO: Check how workbenches protect against despawn
-
-            // Unequip and remove backpack from player's back
-            player.RemoveFromEquipQueue(backpack);
-            player.UnequipItem(backpack, false);
-            player.m_inventory.RemoveItem(backpack);
 
         }
 

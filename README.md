@@ -30,7 +30,6 @@ Most of this project is the result of the hard work of these awesome people!
 ### Compatibility Notes
  * Compatible with _[Project Auga](https://projectauga.com/)!_
  * Minor compatibility [issue](https://forums.nexusmods.com/index.php?/topic/10327288-jotunnbackpacks/page-6#entry98033203) with _Backpack Redux_.
- * _No mod conflicts that I know of yet._
 
 Please let me know if you find any additional bugs, issues or incompatibilities.
 

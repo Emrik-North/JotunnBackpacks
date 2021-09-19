@@ -19,7 +19,6 @@ using BepInEx.Logging;
 /* TODOS
  * • Make backpacks never despawn when quickdropped.
  * • Check if Epic Loot is installed, and disable Weightless as a possible enchant for backpacks.
- * • Make it so you can configure whether the backpacks protect against cold/freezing.
  */
 
 namespace JotunnBackpacks

@@ -45,12 +45,12 @@ For manual install, you want to drag the _JotunnBackpacks_ folder into the BepIn
 
 ### Changelog
 **2.0.0**
- • Added Quickdrop feature like in Outward!
- • Made the size configuration separate for the two backpacks ([paddywaan](https://github.com/paddywaan/) contribution!)
- • Added Russian translation (thanks [to](https://github.com/Emrik-North/JotunnBackpacks/issues/2) Dominowood371 and Mi4oko!)
- • Dropping items directly from backpack inventory now updates player inventory weight ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
- • Unequipping or dropping worn backpack now closes its inventory if it was open ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
- • Cold/freezing protection is now configurable ([feature request](https://github.com/Emrik-North/JotunnBackpacks/issues/3))
+ * Added Quickdrop feature like in Outward!
+ * Made the size configuration separate for the two backpacks ([paddywaan](https://github.com/paddywaan/) contribution!)
+ * Added Russian translation (thanks [to](https://github.com/Emrik-North/JotunnBackpacks/issues/2) Dominowood371 and Mi4oko!)
+ * Dropping items directly from backpack inventory now updates player inventory weight ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
+ * Unequipping or dropping worn backpack now closes its inventory if it was open ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
+ * Cold/freezing protection is now configurable ([feature request](https://github.com/Emrik-North/JotunnBackpacks/issues/3))
 
 ### Links
 [Thunderstore](https://valheim.thunderstore.io/package/EmrikNorth_and_Aedenthorn/JotunnBackpacks/)  

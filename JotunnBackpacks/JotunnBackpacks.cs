@@ -18,10 +18,8 @@ using BepInEx.Logging;
 
 /* TODOS
  * • Make backpacks never despawn when quickdropped.
- * • Call UpdateTotalWeight() when you change backpack inventory.
  * • Check if Epic Loot is installed, and disable Weightless as a possible enchant for backpacks.
  * • Make it so you can configure whether the backpacks protect against cold/freezing.
- * • Bug report about missing items
  */
 
 namespace JotunnBackpacks
@@ -153,46 +151,50 @@ namespace JotunnBackpacks
         //  This is the code appended to the NewExtendedItemData event that we're catching, and the argument passed in automatically is the newly generated extended item data.
         private static void OnNewExtendedItemData(ExtendedItemData itemData)
         {
-            // I check whether the item created is of a type contained in backpackTypes
-            if (backpackTypes.Contains(itemData.m_shared.m_name))
-            {
-                _logger.LogWarning($"{itemData.m_shared.m_name}");
-                // Create an instance of an Inventory class
+            var name = itemData.m_shared.m_name;
 
-                Inventory inventoryInstance = new Inventory(
-                    backpackInventoryName,
-                    null,
-                    (int)ruggedBackpackSize.Value.x,
-                    (int)ruggedBackpackSize.Value.y
-                    );
-                if (itemData.m_shared.m_name.Equals("$item_cape_silverbackpack"))
-                {
-                    inventoryInstance = new Inventory(
-                    backpackInventoryName,
-                    null,
-                    (int)arcticBackpackSize.Value.x,
-                    (int)arcticBackpackSize.Value.y
-                    );
-                }
+            // Check whether the item created is of a type contained in backpackTypes
+            if (backpackTypes.Contains(name))
+            {
+                //_logger.LogWarning($"{name}");
+
+                // Create an instance of an Inventory class
+                // The size of the inventory instance depends on what type of backpack it is
+                Inventory inventoryInstance = NewInventoryInstance(name);
 
                 // Add an empty BackpackComponent to the backpack item
                 var component = itemData.AddComponent<BackpackComponent>();
 
-                // Assign the Inventory instance to the backpack item's BackpackComponent
+                // Assign the Inventory instance to the backpack item's BackpackComponent, and store its type name into the component too
                 component.SetInventory(inventoryInstance);
             }
             
         }
 
-        public static Inventory NewInventoryInstance()
+        public static Inventory NewInventoryInstance(string name)
         {
-            return new Inventory(
+            if (name.Equals("$item_cape_ironbackpack"))
+            {
+                return new Inventory(
                 backpackInventoryName,
                 null,
                 (int)ruggedBackpackSize.Value.x,
                 (int)ruggedBackpackSize.Value.y
                 );
+            }
 
+            if (name.Equals("$item_cape_silverbackpack"))
+            {
+                return new Inventory(
+                backpackInventoryName,
+                null,
+                (int)arcticBackpackSize.Value.x,
+                (int)arcticBackpackSize.Value.y
+                );
+            }
+
+            Log.LogError("Calling NewInventoryInstance with a name that doesn't match any existing backpack type!");
+            return null;
         }
 
         public static ItemDrop.ItemData GetEquippedBackpack()

@@ -51,6 +51,7 @@ For manual install, you want to drag the _JotunnBackpacks_ folder into the BepIn
  * Dropping items directly from backpack inventory now updates player inventory weight ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
  * Unequipping or dropping worn backpack now closes its inventory if it was open ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
  * Cold/freezing protection is now configurable ([feature request](https://github.com/Emrik-North/JotunnBackpacks/issues/3))
+ * Rugged backpack now costs 2 bronze, so it's accessible early game.
 
 ### Links
 [Thunderstore](https://valheim.thunderstore.io/package/EmrikNorth_and_Aedenthorn/JotunnBackpacks/)  

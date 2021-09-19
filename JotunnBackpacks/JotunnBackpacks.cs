@@ -1,16 +1,5 @@
 ﻿/* JotunnBackpacks.cs
  * 
- * CREDIT:
- * Evie/CinnaBunn for their 'eviesbackpacks' assets inside JotunnModExample: https://github.com/Valheim-Modding/JotunnModExample/tree/master/JotunnModExample/AssetsEmbedded
- * Aedenthorn for their BackpackRedux mod, which I derived and learned a lot from: https://github.com/aedenthorn/ValheimMods/blob/master/BackpackRedux/
- * Randy Knapp for their Extended Item Framework, without which this project would have been much harder: https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework
- * sbtoonz/Zarboz for guidance and help with various things like setting ZNetView().m_persistent=true: https://github.com/VMP-Valheim/Back_packs
- * The Jotunn Team for creating Jotunn: The Valheim Library, which is the framework this mod uses: https://valheim-modding.github.io/Jotunn/index.html
- * 
- * Most of this project is the result of the hard work of these awesome people!
- * 
- * *
- * 
  * I usually comment my code heavily. My comment philosophy is to imagine trying to help previous less informed versions of myself learn exactly what's going on in the code.
  * And when I *still* don't understand what's going on in the code even though it works, I'll try to let readers know that so they don't accidentally learn bad practices from me.
  * 
@@ -25,11 +14,11 @@ using UnityEngine;
 using HarmonyLib;
 using ExtendedItemDataFramework;
 using Log = Jotunn.Logger;
+using BepInEx.Logging;
 
 /* TODOS
- * • Hotkey to drop backpack to be able to run faster out of danger, like in Outward!
- * • Also make backpacks never despawn when dropped.
- * 
+ * • Make backpacks never despawn when quickdropped.
+ * • Check if Epic Loot is installed, and disable Weightless as a possible enchant for backpacks.
  */
 
 namespace JotunnBackpacks
@@ -47,18 +36,23 @@ namespace JotunnBackpacks
     {
         public const string PluginGUID = "JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
-        public const string PluginVersion = "1.0.0";
+        public const string PluginVersion = "2.0.0";
         public const string eidfGUID = "randyknapp.mods.extendeditemdataframework";
         public const string eaqsGUID = "randyknapp.mods.equipmentandquickslots";
 
         // Config entries
-        public static ConfigEntry<KeyCode> hotKey;
-        public static ConfigEntry<Vector2> backpackSize;
+        public static ConfigEntry<KeyCode> hotKey_open;
+        public static ConfigEntry<KeyCode> hotKey_drop;
+        public static ConfigEntry<bool> outwardMode;
+        public static ConfigEntry<Vector2> ruggedBackpackSize;
+        public static ConfigEntry<Vector2> arcticBackpackSize;
         public static ConfigEntry<float> weightMultiplier;
         public static ConfigEntry<int> carryBonusRugged;
         public static ConfigEntry<int> carryBonusArctic;
         public static ConfigEntry<float> speedModRugged;
         public static ConfigEntry<float> speedModArctic;
+        public static ConfigEntry<bool> freezingRugged;
+        public static ConfigEntry<bool> freezingArctic;
 
         // Initialise variables
         public static Container backpackContainer; // Only need a single Container because only the contents (Inventory) vary between backpacks, not sizes.
@@ -67,9 +61,12 @@ namespace JotunnBackpacks
         public static string backpackInventoryName = "$ui_backpack_inventoryname";
         public static bool opening = false;
 
+        private static ManualLogSource _logger;
+
         // Awake() is run when the game loads up.
         private void Awake()
         {
+            _logger = base.Logger;
             CreateConfigValues();
             BackpackAssets.LoadAssets();
             BackpackAssets.AddStatusEffects();
@@ -90,45 +87,76 @@ namespace JotunnBackpacks
             Config.SaveOnConfigSet = true;
 
             // These configs can be edited by local users.
-            hotKey = Config.Bind(
-                        "Local config", "HotKey", KeyCode.I,
-                        new ConfigDescription("Hotkey to open backpack."));
+            hotKey_open = Config.Bind(
+                        "Local config", "Open Backpack", KeyCode.I,
+                        new ConfigDescription("Hotkey to open backpack.",
+                        null,
+                        new ConfigurationManagerAttributes { Order = 3 }));
+
+            hotKey_drop = Config.Bind(
+                        "Local config", "Quickdrop Backpack", KeyCode.Y,
+                        new ConfigDescription("Hotkey to quickly drop backpack while on the run.",
+                        null,
+                        new ConfigurationManagerAttributes { Order = 2 }));
+
+            outwardMode = Config.Bind(
+                        "Local config", "Outward Mode", false,
+                        new ConfigDescription("You can use a hotkey to quickly drop your equipped backpack in order to run faster away from danger.",
+                        null,
+                        new ConfigurationManagerAttributes { Order = 1 }));
 
             // These configs are enforced by the server, but can be edited locally if in single-player.
-            backpackSize = Config.Bind(
-                        "Server-enforceable config", "Backpack Size", new Vector2(6, 3),
+            ruggedBackpackSize = Config.Bind(
+                        "Server-enforceable config", "Rugged Backpack Size", new Vector2(6, 3),
                         new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
                         null,
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 9 }));
+            arcticBackpackSize = Config.Bind(
+                        "Server-enforceable config", "Arctic Backpack Size", new Vector2(6, 3),
+                        new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
+                        null,
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 8 }));
 
             weightMultiplier = Config.Bind(
                         "Server-enforceable config", "Weight Multiplier", 0.5f,
                         new ConfigDescription("The weight of items stored in the backpack gets multiplied by this value.",
                         new AcceptableValueRange<float>(0f, 1f), // range between 0f and 1f will make it display as a percentage slider
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 5 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 7 }));
 
             carryBonusRugged = Config.Bind(
-                        "Server-enforceable config", "Rugged Backpack: Carry Bonus", 50,
+                        "Server-enforceable config", "Rugged Backpack: Carry Bonus", 0,
                         new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
                         new AcceptableValueRange<int>(0, 300),
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 4 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
 
             speedModRugged = Config.Bind(
                         "Server-enforceable config", "Rugged Backpack: Speed Modifier", -0.15f,
                         new ConfigDescription("Wearing the backpack slows you down by this much.",
                         new AcceptableValueRange<float>(-1f, -0f),
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 3 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 5 }));
 
             carryBonusArctic = Config.Bind(
                         "Server-enforceable config", "Arctic Backpack: Carry Bonus", 0,
                         new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
                         new AcceptableValueRange<int>(0, 300),
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 2 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 4 }));
 
             speedModArctic = Config.Bind(
                         "Server-enforceable config", "Arctic Backpack: Speed Modifier", -0.15f,
                         new ConfigDescription("Wearing the backpack slows you down by this much.",
                         new AcceptableValueRange<float>(-1f, -0f),
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 3 }));
+
+            freezingRugged = Config.Bind(
+                        "Server-enforceable config", "Rugged: Prevent freezing/cold?", true,
+                        new ConfigDescription("Wearing the backpack protects you against freezing/cold, just like capes.",
+                        null,
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 2 }));
+
+            freezingArctic = Config.Bind(
+                        "Server-enforceable config", "Arctic: Prevent freezing/cold?", true,
+                        new ConfigDescription("Wearing the backpack protects you against freezing/cold, just like capes.",
+                        null,
                         new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 1 }));
 
         }
@@ -136,30 +164,50 @@ namespace JotunnBackpacks
         //  This is the code appended to the NewExtendedItemData event that we're catching, and the argument passed in automatically is the newly generated extended item data.
         private static void OnNewExtendedItemData(ExtendedItemData itemData)
         {
-            // I check whether the item created is of a type contained in backpackTypes
-            if (backpackTypes.Contains(itemData.m_shared.m_name))
+            var name = itemData.m_shared.m_name;
+
+            // Check whether the item created is of a type contained in backpackTypes
+            if (backpackTypes.Contains(name))
             {
+                //_logger.LogWarning($"{name}");
+
                 // Create an instance of an Inventory class
-                Inventory inventoryInstance = NewInventoryInstance();
+                // The size of the inventory instance depends on what type of backpack it is
+                Inventory inventoryInstance = NewInventoryInstance(name);
 
                 // Add an empty BackpackComponent to the backpack item
                 var component = itemData.AddComponent<BackpackComponent>();
 
-                // Assign the Inventory instance to the backpack item's BackpackComponent
+                // Assign the Inventory instance to the backpack item's BackpackComponent, and store its type name into the component too
                 component.SetInventory(inventoryInstance);
             }
-
+            
         }
 
-        public static Inventory NewInventoryInstance()
+        public static Inventory NewInventoryInstance(string name)
         {
-            return new Inventory(
+            if (name.Equals("$item_cape_ironbackpack"))
+            {
+                return new Inventory(
                 backpackInventoryName,
                 null,
-                (int)backpackSize.Value.x,
-                (int)backpackSize.Value.y
+                (int)ruggedBackpackSize.Value.x,
+                (int)ruggedBackpackSize.Value.y
                 );
+            }
 
+            if (name.Equals("$item_cape_silverbackpack"))
+            {
+                return new Inventory(
+                backpackInventoryName,
+                null,
+                (int)arcticBackpackSize.Value.x,
+                (int)arcticBackpackSize.Value.y
+                );
+            }
+
+            Log.LogError("Calling NewInventoryInstance with a name that doesn't match any existing backpack type!");
+            return null;
         }
 
         public static ItemDrop.ItemData GetEquippedBackpack()
@@ -190,10 +238,15 @@ namespace JotunnBackpacks
             if (!Player.m_localPlayer || !ZNetScene.instance)
                 return;
 
-            if (!AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey.Value) && CanOpenBackpack())
+            if (!AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey_open.Value) && CanOpenBackpack())
             {
                 opening = true;
                 OpenBackpack();
+            }
+
+            if (outwardMode.Value && !AedenthornUtils.IgnoreKeyPresses(true) && AedenthornUtils.CheckKeyDown(hotKey_drop.Value) && CanOpenBackpack())
+            {
+                QuickDropBackpack();
             }
 
         }
@@ -254,5 +307,81 @@ namespace JotunnBackpacks
 
         }
 
+        private static void QuickDropBackpack()
+        {
+            Log.LogMessage("Quickdropping backpack.");
+
+            var player = Player.m_localPlayer;
+            var backpack = GetEquippedBackpack();
+
+            // Unequip and remove backpack from player's back
+            // We need to unequip the item BEFORE we drop it, otherwise when we pick it up again the game thinks
+            // we had it equipped all along and fails to update player model, resulting in invisible backpack.
+            player.RemoveFromEquipQueue(backpack);
+            player.UnequipItem(backpack, true);
+            player.m_inventory.RemoveItem(backpack);
+
+            // This drops a copy of the backpack itemDrop.itemData
+            var itemDrop = ItemDrop.DropItem(backpack, 1, player.transform.position + player.transform.forward + player.transform.up, player.transform.rotation);
+
+
+            // The following is just notes on various potential ways of making the backpack non-despawnable after quickdropping it
+            //var component = itemDrop.gameObject.AddComponent<EffectArea>();
+            //component.m_type = EffectArea.Type.PlayerBase;
+
+            //Log.LogMessage($"backpack base?: {component.GetType()}");
+
+            // itemDrop.m_nview.m_type = ZDO.ObjectType.Solid;
+
+            //TODO: Make questitem?! UPDATE: NOT WORK
+            //itemDrop.m_itemData.m_shared.m_questItem = true;
+            //Log.LogMessage($"is backpack quest item: {itemDrop.m_itemData.m_shared.m_questItem}"); // questitem does not work. Backpack still despawns.
+            //CreateBackpackStone(player, backpack);
+
+            // TODO: Check how workbenches protect against despawn
+
+        }
+
+        /*
+        private static void CreateBackpackStone(Player player, ItemDrop.ItemData backpack)
+        {
+            var backpackGo = backpack.m_dropPrefab.gameObject;
+
+            var fijfij = Player.m_localPlayer.m_inventory;
+
+            //backpackGo.layer = 10; // Does this convert the go to a piece?! I probably have to create an instance first.
+            //backpackGo.GetComponent<ZNetView>().m_type = ZDO.ObjectType.Solid;
+
+            //var rb = backpackGo.GetComponent<Rigidbody>();
+            //rb.mass = 1;
+            //rb.useGravity = true;
+            //rb.collisionDetectionMode = CollisionDetectionMode.Discrete;
+            //rb.angularDrag = 0.05f;
+
+            //var ts = backpackGo.AddComponent<TombStone>();
+            //ts.m_text = "Backpack";
+
+            //var fl = backpackGo.AddComponent<Floating>();
+            //fl = Player.m_localPlayer.m_tombstone.GetComponent<Floating>();
+
+            var stoneGo = Instantiate(backpackGo, player.GetCenterPoint(), player.transform.rotation);
+
+            
+            var itemData = stoneGo.GetComponent<ItemDrop.ItemData>();
+
+            //PlayerProfile playerProfile = Game.instance.GetPlayerProfile();
+            //TombStone backpackTombStone = stoneGo.GetComponent<TombStone>();
+
+            
+
+            //Log.LogMessage($"backpackTombStone: {backpackTombStone == null}"); // true
+
+            //backpackTombStone.Setup(playerProfile.GetName(), playerProfile.GetPlayerID()); // NRE
+        }
+        */
+
+
     }
+
+
 }

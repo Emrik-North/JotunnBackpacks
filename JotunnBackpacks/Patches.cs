@@ -1,6 +1,5 @@
 ﻿using BepInEx.Bootstrap;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using HarmonyLib;
 using ExtendedItemDataFramework;
@@ -16,7 +15,7 @@ namespace JotunnBackpacks
         {
             static void Postfix(Animator ___m_animator, ref Container ___m_currentContainer)
             {
-                if (!AedenthornUtils.CheckKeyDown(JotunnBackpacks.hotKey.Value) || !Player.m_localPlayer || !___m_animator.GetBool("visible"))
+                if (!AedenthornUtils.CheckKeyDown(JotunnBackpacks.hotKey_open.Value) || !Player.m_localPlayer || !___m_animator.GetBool("visible"))
                     return;
 
                 if (JotunnBackpacks.opening)
@@ -38,18 +37,18 @@ namespace JotunnBackpacks
 
         }
 
-        // Saving the backpack every time it's changed is marginally more expensive than the alternative, but it's safer and a lot tidier.
-        // The alternative would be to patch every method involved in moving the backpack out of the inventory, which includes dropitem, 4 overloaded moveinventorytothis methods, and more.
-        // When you drop an item, you remove the original instance and drop a cloned instance. A solution to this is to serialize the Inventory instance into the ItemData m_crafterName before it's moved.
         [HarmonyPatch(typeof(Inventory), nameof(Inventory.Changed))]
         static class Inventory_Changed_Patch
         {
+            // Saving the backpack every time it's changed is marginally more expensive than the alternative, but it's safer and a lot tidier.
+            // The alternative would be to patch every method involved in moving the backpack out of the inventory, which includes dropitem, 4 overloaded moveinventorytothis methods, and more.
+            // When you drop an item, you remove the original instance and drop a cloned instance. A solution to this is to serialize the Inventory instance into the ItemData m_crafterName before it's moved.
             static void Postfix(Inventory __instance)
             {
                 // If the inventory changed belongs to a backpack...
                 if (__instance.m_name == JotunnBackpacks.backpackInventoryName)
                 {
-                    // Save the backpack, but only if it's equipped. (This is a workaround to ExtendedItemFrameWork_AddItemFromLoad_Patch)
+                    // Save the backpack, but only if it's equipped. (This is a workaround to ExtendedItemDataFrameWork_AddItemFromLoad_Patch)
                     var backpack = JotunnBackpacks.GetEquippedBackpack();
                     if (backpack != null) backpack.Extended().Save();
                 }
@@ -73,6 +72,38 @@ namespace JotunnBackpacks
 
                         // To the backpack's item weight, add the backpack's inventory weight multiplied by the weightMultiplier in the configs.
                         __result += inventoryWeight * JotunnBackpacks.weightMultiplier.Value;
+                    }
+                }
+            }
+
+        }
+
+        // If the player drops the backpack while the backpack inventory is open, the backpack inventory closes.
+        [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipItem))]
+        static class Humanoid_UnequipItem_Patch
+        {
+            // The "__instance" here is a Humanoid type, but we want the ItemData argument, so we use "__0" instead.
+            // "__0" fetches the argument passed into the first parameter of the original method, which in this case is an ItemData object.
+            static void Prefix(ItemDrop.ItemData __0) 
+            {
+                if (__0 is null) return;
+                var player = Player.m_localPlayer;
+                if (!player) return;
+
+                var item = __0;
+
+                // Check if the item being unequipped is a backpack, and see if it is the same backpack the player is wearing
+                if (JotunnBackpacks.backpackTypes.Contains(item.m_shared.m_name)
+                    && player.m_shoulderItem == item)
+                {
+                    var backpackInventory = JotunnBackpacks.backpackContainer?.m_inventory;
+                    if (backpackInventory is null) return;
+                    var inventoryGui = InventoryGui.instance;
+
+                    // Close the backpack inventory if it's currently open
+                    if (inventoryGui.IsContainerOpen())
+                    {
+                        inventoryGui.CloseContainer();
                     }
                 }
             }
@@ -105,6 +136,21 @@ namespace JotunnBackpacks
                             // Besides, you'll get a "InvalidOperationExecution: Collection was modified; enumeration operation may not execute" error if you don't break the loop here :p
                             break;
                         }
+                    }
+                }
+
+            }
+
+            static void Postfix(Inventory __instance)
+            {
+                var player = Player.m_localPlayer;
+
+                if (__instance.GetName() == JotunnBackpacks.backpackInventoryName)
+                {
+                    // When the equipped backpack inventory total weight is updated, the player inventory total weight should also be updated.
+                    if (player)
+                    {
+                        player.GetInventory().UpdateTotalWeight();
                     }
                 }
             }
@@ -167,8 +213,22 @@ namespace JotunnBackpacks
         {
             static void Postfix(ref bool __result)
             {
-                // If you're wearing a backpack, you are not cold.
-                if (JotunnBackpacks.GetEquippedBackpack() != null) __result = false;
+                var equippedBackpack = JotunnBackpacks.GetEquippedBackpack();
+                if (equippedBackpack is null) return;
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_ironbackpack" &&
+                    JotunnBackpacks.freezingRugged.Value)
+                {
+                    // If you're wearing the backpack, you are not cold.
+                    __result = false;
+                }
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_silverbackpack" &&
+                    JotunnBackpacks.freezingArctic.Value)
+                {
+                    // If you're wearing the backpack, you are not cold.
+                    __result = false;
+                }
             }
 
         }
@@ -178,8 +238,22 @@ namespace JotunnBackpacks
         {
             static void Postfix(ref bool __result)
             {
-                // If you're wearing a backpack, you are not freezing.
-                if (JotunnBackpacks.GetEquippedBackpack() != null) __result = false;
+                var equippedBackpack = JotunnBackpacks.GetEquippedBackpack();
+                if (equippedBackpack is null) return;
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_ironbackpack" &&
+                    JotunnBackpacks.freezingRugged.Value)
+                {
+                    // If you're wearing the backpack, you are not freezing.
+                    __result = false;
+                }
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_silverbackpack" &&
+                    JotunnBackpacks.freezingArctic.Value)
+                {
+                    // If you're wearing the backpack, you are not freezing.
+                    __result = false;
+                }
             }
 
         }

@@ -52,7 +52,9 @@ namespace JotunnBackpacks
                 // If you don't reinitialise your Inventory objects on game start, you'll get a NullReferenceException when the game tries to access those inventories.
                 if (eidf_inventory is null)
                 {
-                    eidf_inventory = JotunnBackpacks.NewInventoryInstance();
+                    // Figure out which backpack type we are deserializing data for by accessing the ItemData of the base class.
+                    var type = base.ItemData.m_shared.m_name;
+                    eidf_inventory = JotunnBackpacks.NewInventoryInstance(type);
                 }
 
                 // Deserialising saved inventory data and storing it into the newly initialised Inventory instance.

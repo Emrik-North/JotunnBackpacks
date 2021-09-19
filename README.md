@@ -20,6 +20,7 @@ Feel free to show appreciation by supporting. :)
  * **Cinnabunn** (_support_) for their amazing art.
  * **Aedenthorn** ([support](https://www.nexusmods.com/valheim/users/18901754)).
  * **Randy Knapp** ([support](https://www.paypal.com/donate/?hosted_button_id=UFYR7AKYFPXLY)) for their [Extended Item Data Framework](https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework). Also this [fix](https://github.com/RandyKnapp/ValheimMods/blob/77e98e3cf0cacc43d9812659f12fd5fcb3154d8d/EquipmentAndQuickSlots/InventoryGrid_Patch.cs#L10).
+ * **paddywaan** for fixing some of my code and adding a feature [via PR](https://github.com/Emrik-North/JotunnBackpacks/commit/335c3b7253eb5c8621b812cb19c858e5bf03234d).
  * **Zarboz** for guidance and [help](https://github.com/VMP-Valheim/Back_packs) with the implementation.
  * **The Jotunn Team** for creating [Jotunn: The Valheim Library](https://valheim-modding.github.io/Jotunn/index.html).
  * **MarcoPogo** and **Jules** for helping me with some questions I had in the [Jotunn Discord](https://discord.gg/DdUt6g7gyA).
@@ -40,6 +41,15 @@ Please let me know if you find any additional bugs, issues or incompatibilities.
 4. Install this mod.
 
 For manual install, you want to drag the _JotunnBackpacks_ folder into the BepInEx/Plugins folder. The _JotunnBackpacks_ folder should contain _JotunnBackpacks.dll_ and _Translations_.
+
+### Changelog
+**2.0.0**
+ • Added Quickdrop feature like in Outward!
+ • Made the size configuration separate for the two backpacks ([paddywaan](https://github.com/paddywaan/) contribution!)
+ • Added Russian translation (thanks [to](https://github.com/Emrik-North/JotunnBackpacks/issues/2) Dominowood371 and Mi4oko!)
+ • Dropping items directly from backpack inventory now updates player inventory weight ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
+ • Unequipping or dropping worn backpack now closes its inventory if it was open ([bug report](https://www.nexusmods.com/valheim/mods/1416?tab=bugs))
+ • Cold/freezing protection is now configurable ([feature request](https://github.com/Emrik-North/JotunnBackpacks/issues/3))
 
 ### Links
 [Thunderstore](https://valheim.thunderstore.io/package/EmrikNorth_and_Aedenthorn/JotunnBackpacks/)  

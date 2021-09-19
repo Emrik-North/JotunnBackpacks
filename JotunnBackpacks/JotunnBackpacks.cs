@@ -44,7 +44,7 @@ namespace JotunnBackpacks
         // Config entries
         public static ConfigEntry<KeyCode> hotKey_open;
         public static ConfigEntry<KeyCode> hotKey_drop;
-        public static ConfigEntry<bool> outwardMode; // TODO: This should enable and disable outward mode. Make it a button in config menu.
+        public static ConfigEntry<bool> outwardMode;
         public static ConfigEntry<Vector2> ruggedBackpackSize;
         public static ConfigEntry<Vector2> arcticBackpackSize;
         public static ConfigEntry<float> weightMultiplier;
@@ -52,6 +52,8 @@ namespace JotunnBackpacks
         public static ConfigEntry<int> carryBonusArctic;
         public static ConfigEntry<float> speedModRugged;
         public static ConfigEntry<float> speedModArctic;
+        public static ConfigEntry<bool> freezingRugged;
+        public static ConfigEntry<bool> freezingArctic;
 
         // Initialise variables
         public static Container backpackContainer; // Only need a single Container because only the contents (Inventory) vary between backpacks, not sizes.
@@ -109,41 +111,53 @@ namespace JotunnBackpacks
                         "Server-enforceable config", "Rugged Backpack Size", new Vector2(6, 3),
                         new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
                         null,
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 9 }));
             arcticBackpackSize = Config.Bind(
                         "Server-enforceable config", "Arctic Backpack Size", new Vector2(6, 3),
                         new ConfigDescription("Backpack size (width, height).\nMax width is 8 unless you want to break things.",
                         null,
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 8 }));
 
             weightMultiplier = Config.Bind(
                         "Server-enforceable config", "Weight Multiplier", 0.5f,
                         new ConfigDescription("The weight of items stored in the backpack gets multiplied by this value.",
                         new AcceptableValueRange<float>(0f, 1f), // range between 0f and 1f will make it display as a percentage slider
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 5 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 7 }));
 
             carryBonusRugged = Config.Bind(
                         "Server-enforceable config", "Rugged Backpack: Carry Bonus", 0,
                         new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
                         new AcceptableValueRange<int>(0, 300),
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 4 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 6 }));
 
             speedModRugged = Config.Bind(
                         "Server-enforceable config", "Rugged Backpack: Speed Modifier", -0.15f,
                         new ConfigDescription("Wearing the backpack slows you down by this much.",
                         new AcceptableValueRange<float>(-1f, -0f),
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 3 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 5 }));
 
             carryBonusArctic = Config.Bind(
                         "Server-enforceable config", "Arctic Backpack: Carry Bonus", 0,
                         new ConfigDescription("Increases your carry capacity by this much while wearing the backpack.",
                         new AcceptableValueRange<int>(0, 300),
-                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 2 }));
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 4 }));
 
             speedModArctic = Config.Bind(
                         "Server-enforceable config", "Arctic Backpack: Speed Modifier", -0.15f,
                         new ConfigDescription("Wearing the backpack slows you down by this much.",
                         new AcceptableValueRange<float>(-1f, -0f),
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 3 }));
+
+            freezingRugged = Config.Bind(
+                        "Server-enforceable config", "Rugged: Prevent freezing/cold?", true,
+                        new ConfigDescription("Wearing the backpack protects you against freezing/cold, just like capes.",
+                        null,
+                        new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 2 }));
+
+            freezingArctic = Config.Bind(
+                        "Server-enforceable config", "Arctic: Prevent freezing/cold?", true,
+                        new ConfigDescription("Wearing the backpack protects you against freezing/cold, just like capes.",
+                        null,
                         new ConfigurationManagerAttributes { IsAdminOnly = true, Order = 1 }));
 
         }

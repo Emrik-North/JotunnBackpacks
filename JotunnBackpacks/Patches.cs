@@ -86,20 +86,24 @@ namespace JotunnBackpacks
             // "__0" fetches the argument passed into the first parameter of the original method, which in this case is an ItemData object.
             static void Prefix(ItemDrop.ItemData __0) 
             {
-                if (!(__0 is null))
-                {
-                    // Check if the item being unequipped is a backpack
-                    if (JotunnBackpacks.backpackTypes.Contains(__0.m_shared.m_name))
-                    {
-                        var backpackInventory = JotunnBackpacks.backpackContainer?.m_inventory;
-                        if (backpackInventory is null) { return; }
-                        var inventoryGui = InventoryGui.instance;
+                if (__0 is null) return;
+                var player = Player.m_localPlayer;
+                if (!player) return;
 
-                        // Close the backpack inventory if it's currently open
-                        if (inventoryGui.IsContainerOpen())
-                        {
-                            inventoryGui.CloseContainer();
-                        }
+                var item = __0;
+
+                // Check if the item being unequipped is a backpack, and see if it is the same backpack the player is wearing
+                if (JotunnBackpacks.backpackTypes.Contains(item.m_shared.m_name)
+                    && player.m_shoulderItem == item)
+                {
+                    var backpackInventory = JotunnBackpacks.backpackContainer?.m_inventory;
+                    if (backpackInventory is null) return;
+                    var inventoryGui = InventoryGui.instance;
+
+                    // Close the backpack inventory if it's currently open
+                    if (inventoryGui.IsContainerOpen())
+                    {
+                        inventoryGui.CloseContainer();
                     }
                 }
             }
@@ -209,8 +213,22 @@ namespace JotunnBackpacks
         {
             static void Postfix(ref bool __result)
             {
-                // If you're wearing a backpack, you are not cold.
-                if (JotunnBackpacks.GetEquippedBackpack() != null) __result = false;
+                var equippedBackpack = JotunnBackpacks.GetEquippedBackpack();
+                if (equippedBackpack is null) return;
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_ironbackpack" &&
+                    JotunnBackpacks.freezingRugged.Value)
+                {
+                    // If you're wearing the backpack, you are not cold.
+                    __result = false;
+                }
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_silverbackpack" &&
+                    JotunnBackpacks.freezingArctic.Value)
+                {
+                    // If you're wearing the backpack, you are not cold.
+                    __result = false;
+                }
             }
 
         }
@@ -220,8 +238,22 @@ namespace JotunnBackpacks
         {
             static void Postfix(ref bool __result)
             {
-                // If you're wearing a backpack, you are not freezing.
-                if (JotunnBackpacks.GetEquippedBackpack() != null) __result = false;
+                var equippedBackpack = JotunnBackpacks.GetEquippedBackpack();
+                if (equippedBackpack is null) return;
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_ironbackpack" &&
+                    JotunnBackpacks.freezingRugged.Value)
+                {
+                    // If you're wearing the backpack, you are not freezing.
+                    __result = false;
+                }
+
+                if (equippedBackpack.m_shared.m_name == "$item_cape_silverbackpack" &&
+                    JotunnBackpacks.freezingArctic.Value)
+                {
+                    // If you're wearing the backpack, you are not freezing.
+                    __result = false;
+                }
             }
 
         }

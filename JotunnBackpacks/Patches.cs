@@ -206,57 +206,6 @@ namespace JotunnBackpacks
             }
 
         }
-
-        // TODO: This is dirty... but it's here until I find out how to do it the proper way.
-        [HarmonyPatch(typeof(EnvMan), nameof(EnvMan.IsCold))]
-        static class IsCold_Patch
-        {
-            static void Postfix(ref bool __result)
-            {
-                var equippedBackpack = JotunnBackpacks.GetEquippedBackpack();
-                if (equippedBackpack is null) return;
-
-                if (equippedBackpack.m_shared.m_name == "$item_cape_ironbackpack" &&
-                    JotunnBackpacks.freezingRugged.Value)
-                {
-                    // If you're wearing the backpack, you are not cold.
-                    __result = false;
-                }
-
-                if (equippedBackpack.m_shared.m_name == "$item_cape_silverbackpack" &&
-                    JotunnBackpacks.freezingArctic.Value)
-                {
-                    // If you're wearing the backpack, you are not cold.
-                    __result = false;
-                }
-            }
-
-        }
-
-        [HarmonyPatch(typeof(EnvMan), nameof(EnvMan.IsFreezing))]
-        static class IsFreezing_Patch
-        {
-            static void Postfix(ref bool __result)
-            {
-                var equippedBackpack = JotunnBackpacks.GetEquippedBackpack();
-                if (equippedBackpack is null) return;
-
-                if (equippedBackpack.m_shared.m_name == "$item_cape_ironbackpack" &&
-                    JotunnBackpacks.freezingRugged.Value)
-                {
-                    // If you're wearing the backpack, you are not freezing.
-                    __result = false;
-                }
-
-                if (equippedBackpack.m_shared.m_name == "$item_cape_silverbackpack" &&
-                    JotunnBackpacks.freezingArctic.Value)
-                {
-                    // If you're wearing the backpack, you are not freezing.
-                    __result = false;
-                }
-            }
-
-        }
-
+        
     }
 }

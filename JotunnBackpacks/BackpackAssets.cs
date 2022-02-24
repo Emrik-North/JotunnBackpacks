@@ -65,6 +65,7 @@ namespace JotunnBackpacks
         // Implementation of assets using mocks, adding recipes manually without the config abstraction
         public static void AddMockedItems()
         {
+            var frostResistance = new HitData.DamageModPair() { m_type = HitData.DamageType.Frost, m_modifier = HitData.DamageModifier.Resistant};
             // Iron Backpack
             if (!BackpackIronPrefab) Jotunn.Logger.LogWarning($"Failed to load asset from bundle: {EmbeddedResourceBundle}");
             else
@@ -84,6 +85,8 @@ namespace JotunnBackpacks
                 itemData.m_shared.m_maxDurability = 1000f;
                 itemData.m_shared.m_movementModifier = JotunnBackpacks.speedModRugged.Value;
                 itemData.m_shared.m_equipStatusEffect = ruggedBackpackEffect.StatusEffect;
+                if (JotunnBackpacks.freezingRugged.Value)
+                    itemData.m_shared.m_damageModifiers = new List<HitData.DamageModPair> { frostResistance };
 
                 // We have to set this to make sure the backpack doesn't immediately despawn if dropped on the ground and the player logs out
                 CI.ItemPrefab.gameObject.GetComponent<ZNetView>().m_persistent = true; // Thanks, Zarboz!!
@@ -120,6 +123,8 @@ namespace JotunnBackpacks
                 itemData.m_shared.m_maxDurability = 1000f;
                 itemData.m_shared.m_movementModifier = JotunnBackpacks.speedModArctic.Value;
                 itemData.m_shared.m_equipStatusEffect = arcticBackpackEffect.StatusEffect;
+                if (JotunnBackpacks.freezingArctic.Value)
+                    itemData.m_shared.m_damageModifiers = new List<HitData.DamageModPair> { frostResistance };
 
                 // We have to set this to make sure the backpack doesn't immediately despawn if dropped on the ground and the player logs out
                 CI.ItemPrefab.gameObject.GetComponent<ZNetView>().m_persistent = true; // Thanks, Zarboz!!

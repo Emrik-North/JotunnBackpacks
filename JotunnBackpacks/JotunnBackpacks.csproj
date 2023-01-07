@@ -46,9 +46,6 @@
     <Reference Include="0Harmony, Version=2.5.4.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\HarmonyX.2.5.4\lib\net45\0Harmony.dll</HintPath>
     </Reference>
-    <Reference Include="ExtendedItemDataFramework">
-      <HintPath>$(VALHEIM_INSTALL)\BepInEx\Plugins\ExtendedItemDataFramework.dll</HintPath>
-    </Reference>
     <Reference Include="Jotunn, Version=2.3.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\JotunnLib.2.3.1\lib\net462\Jotunn.dll</HintPath>
     </Reference>
@@ -83,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\CustomDataManager.cs" />
+    <Compile Include="Data\EIDFLegacy.cs" />
     <Compile Include="Patches.cs" />
     <Compile Include="Properties\IgnoreAccessModifiers.cs" />
     <Compile Include="JotunnBackpacks.cs" />

@@ -12,9 +12,10 @@ using Jotunn.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using HarmonyLib;
-using ExtendedItemDataFramework;
 using Log = Jotunn.Logger;
 using BepInEx.Logging;
+using JotunnBackpacks.Data;
+
 
 /* TODOS
  * • Make backpacks never despawn when quickdropped.
@@ -25,7 +26,6 @@ namespace JotunnBackpacks
 {
     [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
     [BepInDependency(Jotunn.Main.ModGuid)]
-    [BepInDependency(eidfGUID)]
     [BepInDependency(eaqsGUID, BepInDependency.DependencyFlags.SoftDependency)] // This soft dependency is just here to check if it's installed on the client, see the GuiBar_Awake_Patch.
 
     // This attribute is set such that both server and clients need to have this mod, and the same version of this mod, otherwise the client cannot connect.
@@ -37,7 +37,6 @@ namespace JotunnBackpacks
         public const string PluginGUID = "JotunnBackpacks";
         public const string PluginName = "JotunnBackpacks";
         public const string PluginVersion = "2.0.0";
-        public const string eidfGUID = "randyknapp.mods.extendeditemdataframework";
         public const string eaqsGUID = "randyknapp.mods.equipmentandquickslots";
 
         // Config entries
@@ -73,10 +72,7 @@ namespace JotunnBackpacks
             BackpackAssets.AddMockedItems();
             backpackTypes.Add("$item_cape_ironbackpack");
             backpackTypes.Add("$item_cape_silverbackpack");
-
-            // The "NewExtendedItemData" event is run whenever a newly created item is extended by the ExtendedItemDataFramework.dll, I'm just catching it and appending my own code at the end of it
-            ExtendedItemData.NewExtendedItemData += OnNewExtendedItemData;
-
+            
             Harmony harmony = new Harmony(Info.Metadata.GUID);
             harmony.PatchAll();
 
@@ -161,29 +157,7 @@ namespace JotunnBackpacks
 
         }
 
-        //  This is the code appended to the NewExtendedItemData event that we're catching, and the argument passed in automatically is the newly generated extended item data.
-        private static void OnNewExtendedItemData(ExtendedItemData itemData)
-        {
-            var name = itemData.m_shared.m_name;
-
-            // Check whether the item created is of a type contained in backpackTypes
-            if (backpackTypes.Contains(name))
-            {
-                //_logger.LogWarning($"{name}");
-
-                // Create an instance of an Inventory class
-                // The size of the inventory instance depends on what type of backpack it is
-                Inventory inventoryInstance = NewInventoryInstance(name);
-
-                // Add an empty BackpackComponent to the backpack item
-                var component = itemData.AddComponent<BackpackComponent>();
-
-                // Assign the Inventory instance to the backpack item's BackpackComponent, and store its type name into the component too
-                component.SetInventory(inventoryInstance);
-            }
-            
-        }
-
+ 
         public static Inventory NewInventoryInstance(string name)
         {
             if (name.Equals("$item_cape_ironbackpack"))
@@ -223,7 +197,7 @@ namespace JotunnBackpacks
             {
                 if (backpackTypes.Contains(item.m_shared.m_name))
                 {
-                    return item;
+                    return item.Data().GetOrCreate<BackpackComponent>().Item;
                 }
             }
 
@@ -276,7 +250,7 @@ namespace JotunnBackpacks
             if (backpackContainer == null)
                 backpackContainer = Player.m_localPlayer.gameObject.AddComponent<Container>();
 
-            backpackContainer.m_inventory = backpackEquipped.Extended().GetComponent<BackpackComponent>().GetInventory();
+            backpackContainer.m_inventory = backpackEquipped.Data().GetOrCreate<BackpackComponent>().GetInventory();
             InventoryGui.instance.Show(backpackContainer);
 
         }
@@ -305,6 +279,10 @@ namespace JotunnBackpacks
                 // so all items are preserved.
             }
 
+            //Save Backpack Inventory
+            var backpackComponent = item.Data().GetOrCreate<BackpackComponent>();
+            backpackComponent.Save(backpackInventory);
+
         }
 
         private static void QuickDropBackpack()
@@ -317,7 +295,7 @@ namespace JotunnBackpacks
             // Unequip and remove backpack from player's back
             // We need to unequip the item BEFORE we drop it, otherwise when we pick it up again the game thinks
             // we had it equipped all along and fails to update player model, resulting in invisible backpack.
-            player.RemoveFromEquipQueue(backpack);
+            player.RemoveEquipAction(backpack);
             player.UnequipItem(backpack, true);
             player.m_inventory.RemoveItem(backpack);
 

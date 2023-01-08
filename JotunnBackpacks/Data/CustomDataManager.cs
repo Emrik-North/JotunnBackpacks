@@ -10,6 +10,7 @@ using BepInEx.Bootstrap;
 using HarmonyLib;
 using JetBrains.Annotations;
 using UnityEngine;
+using Log=Jotunn.Logger;
 
 namespace JotunnBackpacks.Data
 {
@@ -797,7 +798,7 @@ namespace JotunnBackpacks.Data
 				return foreignInfos[mod] = new ForeignItemInfo(item, foreignItemData);
 			}
 
-			Debug.LogWarning($"Mod {mod} has an {typeof(ItemExtensions).FullName} class, but no Data(ItemDrop.ItemData) method could be called on it.");
+			Log.LogWarning($"Mod {mod} has an {typeof(ItemExtensions).FullName} class, but no Data(ItemDrop.ItemData) method could be called on it.");
 			return foreignInfos[mod] = null;
 		}
 	}

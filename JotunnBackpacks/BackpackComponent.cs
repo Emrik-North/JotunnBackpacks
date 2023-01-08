@@ -13,6 +13,7 @@
 using System;
 using JotunnBackpacks.Data;
 using UnityEngine;
+using Log = Jotunn.Logger;
 
 // Setting this .cs file to the same namespace as JotunnBackpacks.cs, so that I can call methods from within JotunnBackpacks.cs here.
 namespace JotunnBackpacks
@@ -36,13 +37,18 @@ namespace JotunnBackpacks
 
         public string Serialize()
         {
+            Log.LogDebug($"[Serialize()] Starting..");
             // Store the Inventory as a ZPackage
             ZPackage pkg = new ZPackage();
+
+            if (backpack_inventory == null)
+                backpack_inventory = JotunnBackpacks.NewInventoryInstance(Item.m_shared.m_name);
 
             backpack_inventory.Save(pkg);
 
             string data = pkg.GetBase64();
             Value = data;
+            Log.LogDebug($"[Serialize()] Value = {Value}");
 
             // Return the data to be deserialized in the method below
             return data;
@@ -51,10 +57,12 @@ namespace JotunnBackpacks
         // This code is run on game start for objects with a BackpackComponent, and it converts the inventory info from string format (ZPackage) to object format (Inventory) so the game can use it.
         public void Deserialize(string data)
         {
+            Log.LogDebug($"[Deserialize()] Starting..");
             try
             {
                 if (backpack_inventory is null)
                 {
+                    Log.LogDebug($"[Deserialize()] backpack null");
                     // Figure out which backpack type we are deserializing data for by accessing the ItemData of the base class.
                     var type = Item.m_shared.m_name;
                     backpack_inventory = JotunnBackpacks.NewInventoryInstance(type);
@@ -62,7 +70,7 @@ namespace JotunnBackpacks
 
                 //Save data to Value
                 Value = data;
-
+                Log.LogDebug($"[Deserialize()] Value = {Value}");
                 // Deserialising saved inventory data and storing it into the newly initialised Inventory instance.
                 ZPackage pkg = new ZPackage(data);
                 backpack_inventory.Load(pkg);
@@ -79,7 +87,7 @@ namespace JotunnBackpacks
         public override void FirstLoad()
         {
             var name = Item.m_shared.m_name;
-
+            Log.LogDebug($"[FirstLoad] {name}");
             // Check whether the item created is of a type contained in backpackTypes
             if (JotunnBackpacks.backpackTypes.Contains(name))
             {
@@ -101,29 +109,47 @@ namespace JotunnBackpacks
 
         public override void Load()
         {
+            Log.LogDebug($"[Load] Starting");
+
             if (!string.IsNullOrEmpty(Value))
             {
+                Log.LogDebug($"[FirstLoad] Value = {Value}");
                 Deserialize(Value);
             }
             else
             {
+                Log.LogDebug($"[Load] Checking Old EIDF");
                 //Check to see if we have old EIDF Component Data
                 var oldBackpackData = EIDFLegacy.GetCustomItemFromCrafterName(Item);
+
                 if (oldBackpackData != null)
                 {
+                    Log.LogDebug($"[Load] Old Found");
                     Value = oldBackpackData;
                     Deserialize(Value);
                 }
+                else
+                {
+                    if (backpack_inventory == null)
+                    {
+                        Log.LogDebug($"[Load] Backpack null, creating...");
+                        var name = Item.m_shared.m_name;
+                        backpack_inventory = JotunnBackpacks.NewInventoryInstance(name);
+                    }
+                }
+
             }
         }
 
         public override void Save()
         {
+            Log.LogDebug($"[Save()] Starting Value = {Value}");
             Value = Serialize();
         }
 
         public void Save(Inventory backpack)
         {
+            Log.LogDebug($"[Save(Inventory)] Starting backpack count {backpack.m_inventory.Count}");
             backpack_inventory = backpack;
             Save();
         }

@@ -71,7 +71,7 @@ namespace JotunnBackpacks
                         // If the item in GetWeight() is a backpack, and it has been Extended(), call GetTotalWeight() on its Inventory.
                         // Note that GetTotalWeight() just returns a the value of m_totalWeight, and doesn't do any calculation on its own.
                         // If the Inventory has been changed at any point, it calls UpdateTotalWeight(), which should ensure that its m_totalWeight is accurate.
-                        var inventoryWeight = __instance.Data().GetOrCreate<BackpackComponent>().GetInventory().GetTotalWeight();
+                        var inventoryWeight = __instance.Data().GetOrCreate<BackpackComponent>().GetInventory()?.GetTotalWeight() ?? 0;
 
                         // To the backpack's item weight, add the backpack's inventory weight multiplied by the weightMultiplier in the configs.
                         __result += inventoryWeight * JotunnBackpacks.weightMultiplier.Value;
@@ -79,6 +79,7 @@ namespace JotunnBackpacks
                 }
                 catch (Exception e)
                 {
+                    Log.LogDebug($"[ItemDrop.ItemData.GetWeight] An Error occurred - {e.Message}");
                 }
             }
         }

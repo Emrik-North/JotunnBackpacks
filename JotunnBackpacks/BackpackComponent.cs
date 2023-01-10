@@ -11,6 +11,8 @@
  */
 
 using System;
+using ExtendedItemDataFramework;
+using JetBrains.Annotations;
 using JotunnBackpacks.Data;
 using UnityEngine;
 using Log = Jotunn.Logger;
@@ -22,17 +24,34 @@ namespace JotunnBackpacks
     {
         public static string TypeID = "BackpackComponent";
 
-        public Inventory backpack_inventory;
+        public Inventory BackpackInventory;
+
+        public BackpackComponent()
+        {
+            // No code needed here.
+        }
+
+        //Not really needed, but for games with EIDF running and old backpacks still in play, EIDF is expecting this.
+       
+        public BackpackComponent(ExtendedItemData parent)
+        {
+            // No code needed here.
+        }
+
+        public BackpackComponent([NotNull] Inventory backpackInventory = null)
+        {
+            BackpackInventory = backpackInventory;
+        }
 
         public void SetInventory(Inventory inventoryInstance)
         {
-            backpack_inventory = inventoryInstance;
-            Save(backpack_inventory); // This writes the new data to the ItemData object, which will be saved whenever game saves the ItemData object.
+            BackpackInventory = inventoryInstance;
+            Save(BackpackInventory); // This writes the new data to the ItemData object, which will be saved whenever game saves the ItemData object.
         }
 
         public Inventory GetInventory()
         {
-            return backpack_inventory;
+            return BackpackInventory;
         }
 
         public string Serialize()
@@ -41,10 +60,10 @@ namespace JotunnBackpacks
             // Store the Inventory as a ZPackage
             ZPackage pkg = new ZPackage();
 
-            if (backpack_inventory == null)
-                backpack_inventory = JotunnBackpacks.NewInventoryInstance(Item.m_shared.m_name);
+            if (BackpackInventory == null)
+                BackpackInventory = JotunnBackpacks.NewInventoryInstance(Item.m_shared.m_name);
 
-            backpack_inventory.Save(pkg);
+            BackpackInventory.Save(pkg);
 
             string data = pkg.GetBase64();
             Value = data;
@@ -60,12 +79,12 @@ namespace JotunnBackpacks
             Log.LogDebug($"[Deserialize()] Starting..");
             try
             {
-                if (backpack_inventory is null)
+                if (BackpackInventory is null)
                 {
                     Log.LogDebug($"[Deserialize()] backpack null");
                     // Figure out which backpack type we are deserializing data for by accessing the ItemData of the base class.
                     var type = Item.m_shared.m_name;
-                    backpack_inventory = JotunnBackpacks.NewInventoryInstance(type);
+                    BackpackInventory = JotunnBackpacks.NewInventoryInstance(type);
                 }
 
                 //Save data to Value
@@ -73,9 +92,9 @@ namespace JotunnBackpacks
                 Log.LogDebug($"[Deserialize()] Value = {Value}");
                 // Deserialising saved inventory data and storing it into the newly initialised Inventory instance.
                 ZPackage pkg = new ZPackage(data);
-                backpack_inventory.Load(pkg);
+                BackpackInventory.Load(pkg);
 
-                Save(backpack_inventory);
+                Save(BackpackInventory);
 
             }
             catch (Exception ex)
@@ -91,7 +110,7 @@ namespace JotunnBackpacks
             // Check whether the item created is of a type contained in backpackTypes
             if (JotunnBackpacks.backpackTypes.Contains(name))
             {
-                if (backpack_inventory != null)
+                if (BackpackInventory != null)
                 {
                     return;
                 }
@@ -100,7 +119,7 @@ namespace JotunnBackpacks
                 var oldBackpackData = EIDFLegacy.GetCustomItemFromCrafterName(Item);
                 if (oldBackpackData != null)
                 {
-                    backpack_inventory = JotunnBackpacks.NewInventoryInstance(name);
+                    BackpackInventory = JotunnBackpacks.NewInventoryInstance(name);
                     Value = oldBackpackData;
                     Deserialize(Value);
                 }
@@ -130,11 +149,11 @@ namespace JotunnBackpacks
                 }
                 else
                 {
-                    if (backpack_inventory == null)
+                    if (BackpackInventory == null)
                     {
                         Log.LogDebug($"[Load] Backpack null, creating...");
                         var name = Item.m_shared.m_name;
-                        backpack_inventory = JotunnBackpacks.NewInventoryInstance(name);
+                        BackpackInventory = JotunnBackpacks.NewInventoryInstance(name);
                     }
                 }
 
@@ -150,7 +169,7 @@ namespace JotunnBackpacks
         public void Save(Inventory backpack)
         {
             Log.LogDebug($"[Save(Inventory)] Starting backpack count {backpack.m_inventory.Count}");
-            backpack_inventory = backpack;
+            BackpackInventory = backpack;
             Save();
         }
 
@@ -172,7 +191,7 @@ namespace JotunnBackpacks
 
                 var prefabData = itemDropPrefab.m_itemData.Data().GetOrCreate<BackpackComponent>();
 
-                instanceData.Save(prefabData.backpack_inventory);
+                instanceData.Save(prefabData.BackpackInventory);
                 
                 return itemDropPrefab.gameObject;
             }

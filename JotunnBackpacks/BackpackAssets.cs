@@ -11,7 +11,7 @@ using Jotunn.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
-
+ 
 namespace JotunnBackpacks
 {
     public class BackpackAssets
@@ -32,8 +32,6 @@ namespace JotunnBackpacks
             EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("eviesbackpacks", typeof(JotunnBackpacks).Assembly);
             BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab");
             BackpackSilverPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
-            //BackpackIronQuickdropPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab"); // TODO
-            //BackpackSilverQuickdropPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
         }
         
         public static void AddStatusEffects()

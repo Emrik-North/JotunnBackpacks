@@ -43,26 +43,50 @@
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>G:\Steam\steamapps\common\Valheim-Dev\BepInEx\core\0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="0Harmony, Version=2.5.4.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\HarmonyX.2.5.4\lib\net45\0Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\..\References\publicized_assemblies\Assembly-CSharp_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_googleanalytics">
+      <HintPath>..\..\References\publicized_assemblies\assembly_googleanalytics_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_guiutils">
+      <HintPath>..\..\References\publicized_assemblies\assembly_guiutils_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_lux">
+      <HintPath>..\..\References\publicized_assemblies\assembly_lux_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_postprocessing">
+      <HintPath>..\..\References\publicized_assemblies\assembly_postprocessing_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_simplemeshcombine">
+      <HintPath>..\..\References\publicized_assemblies\assembly_simplemeshcombine_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_steamworks">
+      <HintPath>..\..\References\publicized_assemblies\assembly_steamworks_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_sunshafts">
+      <HintPath>..\..\References\publicized_assemblies\assembly_sunshafts_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_utils">
+      <HintPath>..\..\References\publicized_assemblies\assembly_utils_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="assembly_valheim">
+      <HintPath>..\..\References\publicized_assemblies\assembly_valheim_publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>G:\Steam\steamapps\common\Valheim-Dev\BepInEx\core\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="ExtendedItemDataFramework">
+      <HintPath>..\lib\ExtendedItemDataFramework.dll</HintPath>
+    </Reference>
     <Reference Include="Jotunn, Version=2.3.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\JotunnLib.2.3.1\lib\net462\Jotunn.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.4\lib\net40\Mono.Cecil.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil.Mdb, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.4\lib\net40\Mono.Cecil.Mdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil.Pdb, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.4\lib\net40\Mono.Cecil.Pdb.dll</HintPath>
-    </Reference>
-    <Reference Include="Mono.Cecil.Rocks, Version=0.11.4.0, Culture=neutral, PublicKeyToken=50cebf1cceb9d05e, processorArchitecture=MSIL">
-      <HintPath>..\packages\Mono.Cecil.0.11.4\lib\net40\Mono.Cecil.Rocks.dll</HintPath>
-    </Reference>
-    <Reference Include="MonoMod, Version=21.8.19.1, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\MonoMod.21.8.19.1\lib\net40\MonoMod.exe</HintPath>
     </Reference>
     <Reference Include="MonoMod.RuntimeDetour, Version=21.8.19.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MonoMod.RuntimeDetour.21.8.19.1\lib\net40\MonoMod.RuntimeDetour.dll</HintPath>
@@ -92,6 +116,7 @@
   <ItemGroup>
     <None Include="app.config" />
     <EmbeddedResource Include="AssetsEmbedded\eviesbackpacks" />
+    <None Include="AssetsEmbedded\vapokbackpacks" />
     <None Include="packages.config" />
     <None Include="Package\README.md" />
   </ItemGroup>

@@ -2,6 +2,6 @@
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <!-- Needs to be your path to the base Valheim folder -->
-    <VALHEIM_INSTALL>G:\Steam\steamapps\common\Valheim</VALHEIM_INSTALL>
+    <VALHEIM_INSTALL>G:\Steam\steamapps\common\Valheim-Dev</VALHEIM_INSTALL>
   </PropertyGroup>
 </Project>

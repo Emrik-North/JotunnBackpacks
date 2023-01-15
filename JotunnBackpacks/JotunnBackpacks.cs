@@ -244,13 +244,22 @@ namespace JotunnBackpacks
 
         public static void OpenBackpack()
         {
-            var player = Player.m_localPlayer;
+            if (Player.m_localPlayer == null)
+                return;
 
             backpackContainer = Player.m_localPlayer.gameObject.GetComponent<Container>();
             if (backpackContainer == null)
                 backpackContainer = Player.m_localPlayer.gameObject.AddComponent<Container>();
 
-            backpackContainer.m_inventory = backpackEquipped.Data().GetOrCreate<BackpackComponent>().GetInventory();
+            var backpackItem = backpackEquipped.Data().GetOrCreate<BackpackComponent>();
+
+            backpackContainer.m_inventory = backpackItem.GetInventory();
+
+            if (backpackContainer.m_inventory == null)  
+            {
+                backpackContainer.m_inventory = JotunnBackpacks.NewInventoryInstance(backpackItem.Item.m_shared.m_name);
+            }
+            
             InventoryGui.instance.Show(backpackContainer);
 
         }

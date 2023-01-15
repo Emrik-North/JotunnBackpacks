@@ -123,6 +123,11 @@ namespace JotunnBackpacks
                     Value = oldBackpackData;
                     Deserialize(Value);
                 }
+                else
+                {
+                    Log.LogDebug($"[Load] Backpack null, creating...");
+                    BackpackInventory = JotunnBackpacks.NewInventoryInstance(name);
+                }
             }
         }
 
@@ -132,7 +137,7 @@ namespace JotunnBackpacks
 
             if (!string.IsNullOrEmpty(Value))
             {
-                Log.LogDebug($"[FirstLoad] Value = {Value}");
+                Log.LogDebug($"[Load] Value = {Value}");
                 Deserialize(Value);
             }
             else

@@ -1,8 +1,9 @@
-﻿using BepInEx.Bootstrap;
+﻿using System;
+using BepInEx.Bootstrap;
 using System.Collections.Generic;
 using UnityEngine;
 using HarmonyLib;
-using ExtendedItemDataFramework;
+using JotunnBackpacks.Data;
 using Log = Jotunn.Logger;
 
 namespace JotunnBackpacks
@@ -50,10 +51,9 @@ namespace JotunnBackpacks
                 {
                     // Save the backpack, but only if it's equipped. (This is a workaround to ExtendedItemDataFrameWork_AddItemFromLoad_Patch)
                     var backpack = JotunnBackpacks.GetEquippedBackpack();
-                    if (backpack != null) backpack.Extended().Save();
+                    if (backpack != null) backpack.Data().GetOrCreate<BackpackComponent>().Save();
                 }
             }
-
         }
 
         [HarmonyPatch(typeof(ItemDrop.ItemData), nameof(ItemDrop.ItemData.GetWeight))]
@@ -61,23 +61,29 @@ namespace JotunnBackpacks
         {
             static void Postfix(ItemDrop.ItemData __instance, ref float __result)
             {
-                if (JotunnBackpacks.backpackTypes.Contains(__instance.m_shared.m_name))
+                try
                 {
-                    if (__instance.IsExtended())
+                    if (__instance == null || string.IsNullOrEmpty(__instance.m_shared.m_name))
+                        return;
+
+                    if (JotunnBackpacks.backpackTypes.Contains(__instance.m_shared.m_name))
                     {
                         // If the item in GetWeight() is a backpack, and it has been Extended(), call GetTotalWeight() on its Inventory.
                         // Note that GetTotalWeight() just returns a the value of m_totalWeight, and doesn't do any calculation on its own.
                         // If the Inventory has been changed at any point, it calls UpdateTotalWeight(), which should ensure that its m_totalWeight is accurate.
-                        var inventoryWeight = __instance.Extended().GetComponent<BackpackComponent>().GetInventory().GetTotalWeight();
+                        var inventoryWeight = __instance.Data().GetOrCreate<BackpackComponent>().GetInventory()?.GetTotalWeight() ?? 0;
 
                         // To the backpack's item weight, add the backpack's inventory weight multiplied by the weightMultiplier in the configs.
                         __result += inventoryWeight * JotunnBackpacks.weightMultiplier.Value;
                     }
                 }
+                catch (Exception e)
+                {
+                    Log.LogDebug($"[ItemDrop.ItemData.GetWeight] An Error occurred - {e.Message}");
+                }
             }
-
         }
-
+        
         // If the player drops the backpack while the backpack inventory is open, the backpack inventory closes.
         [HarmonyPatch(typeof(Humanoid), nameof(Humanoid.UnequipItem))]
         static class Humanoid_UnequipItem_Patch
@@ -98,6 +104,11 @@ namespace JotunnBackpacks
                 {
                     var backpackInventory = JotunnBackpacks.backpackContainer?.m_inventory;
                     if (backpackInventory is null) return;
+
+                    //Save Backpack
+                    var backpackComponent = item.Data().GetOrCreate<BackpackComponent>();
+                    backpackComponent.Save(backpackInventory);
+
                     var inventoryGui = InventoryGui.instance;
 
                     // Close the backpack inventory if it's currently open
@@ -144,7 +155,7 @@ namespace JotunnBackpacks
             static void Postfix(Inventory __instance)
             {
                 var player = Player.m_localPlayer;
-
+                
                 if (__instance.GetName() == JotunnBackpacks.backpackInventoryName)
                 {
                     // When the equipped backpack inventory total weight is updated, the player inventory total weight should also be updated.
@@ -174,7 +185,7 @@ namespace JotunnBackpacks
                     {
                         if (JotunnBackpacks.backpackTypes.Contains(item.m_shared.m_name))
                         {
-                            if (!item.Extended().GetComponent<BackpackComponent>().GetInventory().IsTeleportable())
+                            if (!item.Data().GetOrCreate<BackpackComponent>().GetInventory().IsTeleportable())
                             {
                                 // A backpack's inventory inside player inventory was not teleportable.
                                 __result = false;

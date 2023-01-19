@@ -11,7 +11,7 @@ using Jotunn.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 
-
+ 
 namespace JotunnBackpacks
 {
     public class BackpackAssets
@@ -29,11 +29,9 @@ namespace JotunnBackpacks
         {
             // Load backpack asset bundle from embedded resources
             Jotunn.Logger.LogInfo($"Embedded resources: {string.Join(",", typeof(JotunnBackpacks).Assembly.GetManifestResourceNames())}");
-            EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("eviesbackpacks", typeof(JotunnBackpacks).Assembly);
-            BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab");
-            BackpackSilverPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
-            //BackpackIronQuickdropPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeIronBackpack.prefab"); // TODO
-            //BackpackSilverQuickdropPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/Evie/CapeSilverBackpack.prefab");
+            EmbeddedResourceBundle = AssetUtils.LoadAssetBundleFromResources("vapokbackpacks", typeof(JotunnBackpacks).Assembly);
+            BackpackIronPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/vapok/CapeIronBackpack.prefab");
+            BackpackSilverPrefab = EmbeddedResourceBundle.LoadAsset<GameObject>("Assets/vapok/CapeSilverBackpack.prefab");
         }
         
         public static void AddStatusEffects()

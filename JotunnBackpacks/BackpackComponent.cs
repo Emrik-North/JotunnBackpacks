@@ -1,65 +1,100 @@
 ﻿/* BackpackComponent.cs
  * 
- * I'm mostly following Randy Knapp's wonderfwl guide to their Extended Item Data Framework here, and I'm not sure about all the syntax, myself.
- * https://github.com/RandyKnapp/ValheimMods/tree/main/ExtendedItemDataFramework#readme
- * 
+ * Converted by Vapok to no longer rely on Extended Item Data Framework.
+ * Now utilized Iron Gate's m_customData object to store backpack data.
+ *
+ * Github: https://github.com/Vapok/JotunnBackpacks
+ *
+ * Automatically converts EIDF backpacks to new CustomData backpacks.
+ * Backpacks created after this conversion can not be used in prior versions of JotunnBackpacks
+ *
  */
 
 using System;
 using ExtendedItemDataFramework;
+using JetBrains.Annotations;
+using JotunnBackpacks.Data;
+using UnityEngine;
+using Log = Jotunn.Logger;
 
 // Setting this .cs file to the same namespace as JotunnBackpacks.cs, so that I can call methods from within JotunnBackpacks.cs here.
 namespace JotunnBackpacks
 {
-    public class BackpackComponent : BaseExtendedItemComponent
+    public class BackpackComponent : CustomItemData
     {
-        public Inventory eidf_inventory;
+        public static string TypeID = "BackpackComponent";
 
-        public BackpackComponent(ExtendedItemData parent) : base(typeof(BackpackComponent).AssemblyQualifiedName, parent)
+        public Inventory BackpackInventory;
+
+        public BackpackComponent()
         {
             // No code needed here.
         }
 
+        //Not really needed, but for games with EIDF running and old backpacks still in play, EIDF is expecting this.
+       
+        public BackpackComponent(ExtendedItemData parent)
+        {
+            // No code needed here.
+        }
+
+        public BackpackComponent([NotNull] Inventory backpackInventory = null)
+        {
+            BackpackInventory = backpackInventory;
+        }
+
         public void SetInventory(Inventory inventoryInstance)
         {
-            eidf_inventory = inventoryInstance;
-            Save(); // This writes the new data to the ItemData object, which will be saved whenever game saves the ItemData object.
+            BackpackInventory = inventoryInstance;
+            Save(BackpackInventory); // This writes the new data to the ItemData object, which will be saved whenever game saves the ItemData object.
         }
 
         public Inventory GetInventory()
         {
-            return eidf_inventory;
+            return BackpackInventory;
         }
 
-        public override string Serialize()
+        public string Serialize()
         {
+            Log.LogDebug($"[Serialize()] Starting..");
             // Store the Inventory as a ZPackage
             ZPackage pkg = new ZPackage();
-            eidf_inventory.Save(pkg);
+
+            if (BackpackInventory == null)
+                BackpackInventory = JotunnBackpacks.NewInventoryInstance(Item.m_shared.m_name);
+
+            BackpackInventory.Save(pkg);
+
             string data = pkg.GetBase64();
+            Value = data;
+            Log.LogDebug($"[Serialize()] Value = {Value}");
 
             // Return the data to be deserialized in the method below
             return data;
         }
 
         // This code is run on game start for objects with a BackpackComponent, and it converts the inventory info from string format (ZPackage) to object format (Inventory) so the game can use it.
-        public override void Deserialize(string data)
+        public void Deserialize(string data)
         {
+            Log.LogDebug($"[Deserialize()] Starting..");
             try
             {
-                // When the game closes, it saves data from ItemData objects by storing it as strings in the save file, and then it destroys all instances of objects.
-                // So upon game start, we need to initialise new objects and store the saved data into those.
-                // If you don't reinitialise your Inventory objects on game start, you'll get a NullReferenceException when the game tries to access those inventories.
-                if (eidf_inventory is null)
+                if (BackpackInventory is null)
                 {
+                    Log.LogDebug($"[Deserialize()] backpack null");
                     // Figure out which backpack type we are deserializing data for by accessing the ItemData of the base class.
-                    var type = base.ItemData.m_shared.m_name;
-                    eidf_inventory = JotunnBackpacks.NewInventoryInstance(type);
+                    var type = Item.m_shared.m_name;
+                    BackpackInventory = JotunnBackpacks.NewInventoryInstance(type);
                 }
 
+                //Save data to Value
+                Value = data;
+                Log.LogDebug($"[Deserialize()] Value = {Value}");
                 // Deserialising saved inventory data and storing it into the newly initialised Inventory instance.
                 ZPackage pkg = new ZPackage(data);
-                eidf_inventory.Load(pkg);
+                BackpackInventory.Load(pkg);
+
+                Save(BackpackInventory);
 
             }
             catch (Exception ex)
@@ -68,10 +103,105 @@ namespace JotunnBackpacks
             }
         }
 
-        // Just following Randy Knapp's guide here
-        public override BaseExtendedItemComponent Clone()
+        public override void FirstLoad()
         {
-            return MemberwiseClone() as BaseExtendedItemComponent;
+            var name = Item.m_shared.m_name;
+            Log.LogDebug($"[FirstLoad] {name}");
+            // Check whether the item created is of a type contained in backpackTypes
+            if (JotunnBackpacks.backpackTypes.Contains(name))
+            {
+                if (BackpackInventory != null)
+                {
+                    return;
+                }
+
+                //Check to see if we have old EIDF Component Data
+                var oldBackpackData = EIDFLegacy.GetCustomItemFromCrafterName(Item);
+                if (oldBackpackData != null)
+                {
+                    BackpackInventory = JotunnBackpacks.NewInventoryInstance(name);
+                    Value = oldBackpackData;
+                    Deserialize(Value);
+                }
+                else
+                {
+                    Log.LogDebug($"[Load] Backpack null, creating...");
+                    BackpackInventory = JotunnBackpacks.NewInventoryInstance(name);
+                }
+            }
+        }
+
+        public override void Load()
+        {
+            Log.LogDebug($"[Load] Starting");
+
+            if (!string.IsNullOrEmpty(Value))
+            {
+                Log.LogDebug($"[Load] Value = {Value}");
+                Deserialize(Value);
+            }
+            else
+            {
+                Log.LogDebug($"[Load] Checking Old EIDF");
+                //Check to see if we have old EIDF Component Data
+                var oldBackpackData = EIDFLegacy.GetCustomItemFromCrafterName(Item);
+
+                if (oldBackpackData != null)
+                {
+                    Log.LogDebug($"[Load] Old Found");
+                    Value = oldBackpackData;
+                    Deserialize(Value);
+                }
+                else
+                {
+                    if (BackpackInventory == null)
+                    {
+                        Log.LogDebug($"[Load] Backpack null, creating...");
+                        var name = Item.m_shared.m_name;
+                        BackpackInventory = JotunnBackpacks.NewInventoryInstance(name);
+                    }
+                }
+
+            }
+        }
+
+        public override void Save()
+        {
+            Log.LogDebug($"[Save()] Starting Value = {Value}");
+            Value = Serialize();
+        }
+
+        public void Save(Inventory backpack)
+        {
+            Log.LogDebug($"[Save(Inventory)] Starting backpack count {backpack.m_inventory.Count}");
+            BackpackInventory = backpack;
+            Save();
+        }
+
+        public CustomItemData Clone()
+        {
+            return MemberwiseClone() as CustomItemData;
+        }
+    }
+
+    public static class BackpackExtensions
+    {
+        public static GameObject InitializeCustomData(this ItemDrop.ItemData itemData)
+        {
+            var prefab = itemData.m_dropPrefab;
+            if (prefab != null)
+            {
+                var itemDropPrefab = prefab.GetComponent<ItemDrop>();
+                var instanceData = itemData.Data().GetOrCreate<BackpackComponent>();
+
+                var prefabData = itemDropPrefab.m_itemData.Data().GetOrCreate<BackpackComponent>();
+
+                instanceData.Save(prefabData.BackpackInventory);
+                
+                return itemDropPrefab.gameObject;
+            }
+
+            return null;
         }
     }
 }
